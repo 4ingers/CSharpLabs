@@ -24,7 +24,7 @@ namespace Lab5 {
       if (toConvert.Length == 3) {
         string precisionString = toConvert[2];
         if (!int.TryParse(precisionString, out precision) || (precision < 1)
-          || precision > 128)
+          || precision > 1024)
           precision = Constants.Precision;
       }
       return (num, radix, precision);
