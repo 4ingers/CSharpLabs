@@ -42,7 +42,7 @@ namespace Lab5 {
 
 
     public static string FormatDecimal(decimal num, int radix,
-      int precision = Constants.Precision) {
+      int precision) {
 
       List<decimal> decs = new List<decimal>();
 

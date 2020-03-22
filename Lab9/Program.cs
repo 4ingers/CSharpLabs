@@ -1,38 +1,32 @@
 ﻿using System;
 
-namespace Lab9
+namespace _9
 {
   class Program {
-    public delegate double FuncValue(double x);
+    public delegate double Solver(double x);
     static void Main(string[] args) {
-      Console.WriteLine(Bisection(f, -2, -1, 10e-5));
-      Console.WriteLine(Bisection(f, 3, 4, 10e-5));
+      double x1 = Bisection(Equation, -2, -1, Constants.Epsilon);
+      double x2 = Bisection(Equation, 3, 4, Constants.Epsilon);
+      Console.WriteLine(x1);
+      Console.WriteLine(x2);
     }
 
-    static double f(double x) {
+    static double Equation(double x) {
       return Math.Pow(x, 4) + Math.Pow(x, 3) - 6 * Math.Pow(x,2) - 20 * x - 16;
     }
 
-    static double Bisection(
-      FuncValue f,
-      double a,
-      double b,
-      double EPSILON = 1e-10
-    ) {
+    static double Bisection(Solver f, double a, double b, double eps) {
       var x1 = a;
       var x2 = b;
       var f_b = f(b);
-      var iter = 0;
-
-      while (Math.Abs(x2 - x1) > EPSILON) {
-          iter++;
-          var midPoint = 0.5 * (x1 + x2);
-          if (f_b * f(midPoint) > 0)
-            x2 = midPoint;
+      
+      while (Math.Abs(x2 - x1) >= eps) {
+          var x3 = (x1 + x2) / 2.0;
+          if (f_b * f(x3) > 0)
+            x2 = x3;
           else
-            x1 = midPoint;
+            x1 = x3;
       }
-
       return x2 - (x2 - x1) * f(x2) / (f(x2) - f(x1));
     }
   }
