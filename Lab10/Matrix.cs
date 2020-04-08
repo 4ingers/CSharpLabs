@@ -1,5 +1,7 @@
 ﻿using System;
 
+/// Exceptions are left to add
+
 namespace Matrix {
   public class Matrix : ICloneable {
     private double[,] data;
@@ -39,6 +41,49 @@ namespace Matrix {
 
     public void FillByZeros() => ActionOverData((i, j) => this[i, j] = 0);
     public void SetIdentity() => ActionOverData((i, j) => this[i, j] = (i == j ? 1 : 0));
+
+    public static Matrix Add(Matrix lhs, Matrix rhs) {
+      Matrix result = new Matrix(lhs);
+      result.ActionOverData((i, j) => result[i, j] += rhs[i, j]);
+      return result;
+    }
+
+    public static Matrix Subtract(Matrix lhs, Matrix rhs) {
+      Matrix result = new Matrix(lhs);
+      result.ActionOverData((i, j) => result[i, j] -= rhs[i, j]);
+      return result;
+    }
+
+    public static Matrix Multiply(Matrix lhs, Matrix rhs) {
+      Matrix result = new Matrix(lhs);
+      result.ActionOverData((x, y) => {
+        double accumulator = 0;
+        for (int i = 0; i < lhs.Size; i++) 
+          accumulator += lhs[x, i] * rhs[i, y];
+        result[x, y] = accumulator;
+      });
+      return result;
+    }
+
+    public static Matrix Divide(Matrix lhs, Matrix rhs) {
+      return Multiply(lhs, rhs.Inverse());
+    }
+
+    public static Matrix operator +(Matrix lhs, Matrix rhs) {
+      return Add(lhs, rhs);
+    }
+
+    public static Matrix operator -(Matrix lhs, Matrix rhs) {
+      return Subtract(lhs, rhs);
+    }
+
+    public static Matrix operator *(Matrix lhs, Matrix rhs) {
+      return Multiply(lhs, rhs);
+    }
+
+    public static Matrix operator /(Matrix lhs, Matrix rhs) {
+      return Divide(lhs, rhs);
+    }
 
     public Matrix Transpose() {
       Matrix transposed = new Matrix(Size);
@@ -84,82 +129,57 @@ namespace Matrix {
       return determinant;
     }
 
-    public static Matrix Add(Matrix lhs, Matrix rhs) {
-      Matrix result = new Matrix(lhs);
-      result.ActionOverData((i, j) => result[i, j] += rhs[i, j]);
-      return result;
-    }
-
-    public static Matrix Subtract(Matrix lhs, Matrix rhs) {
-      Matrix result = new Matrix(lhs);
-      result.ActionOverData((i, j) => result[i, j] -= rhs[i, j]);
-      return result;
-    }
-
-    public static Matrix Multiply(Matrix lhs, Matrix rhs) {
-      Matrix result = new Matrix(lhs);
-      result.ActionOverData((x, y) => {
-        double accumulator = 0;
-        for (int i = 0; i < lhs.Size; i++) 
-          accumulator += lhs[x, i] * rhs[i, y];
-        result[x, y] = accumulator;
-      });
-      return result;
-    }
-
-    public static Matrix Inverse(Matrix matrix) {
+    public Matrix Inverse() {
       // Нулевой определитель == необратимость матрицы
-      if (Math.Abs(matrix.Determinant()) < Constants.Eps)
+      if (Math.Abs(Determinant()) < Constants.Eps)
         //TODO throw inversion_error();
         throw new NotImplementedException();
 
-      Matrix transit = new Matrix(matrix);
-      Matrix res = new Matrix(matrix.Size);
-      res.SetIdentity();
+      Matrix process = new Matrix(this);
+      Matrix result = new Matrix(this.Size);
+      result.SetIdentity();
 
-      int size = matrix.Size;
+      int size = this.Size;
 
       for (int i = 0; i < size - 1; i++) {
         int tmp = i;
-        while (Math.Abs(matrix[tmp, i]) < Constants.Eps && tmp < size) 
+        while (Math.Abs(this[tmp, i]) < Constants.Eps && tmp < size) 
           tmp++;
         for (int j = 0; j < size; ++j) {
-          double tmpMean = transit[i, j];
-          transit[i, j] = transit[tmp, j];
-          transit[tmp, j] = tmpMean;
+          double tmpMean = process[i, j];
+          process[i, j] = process[tmp, j];
+          process[tmp, j] = tmpMean;
 
-          tmpMean = res[i, j];
-          res[i, j] = res[tmp, j];
-          res[tmp, j] = tmpMean;
+          tmpMean = result[i, j];
+          result[i, j] = result[tmp, j];
+          result[tmp, j] = tmpMean;
         }
-        double tmpCoef = transit[i, i];
+        double tmpCoef = process[i, i];
         for (int j = 0; j < size; ++j) {
-          transit[i, j] = transit[i, j] / tmpCoef;
-          res[i, j] = res[i, j] / tmpCoef;
+          process[i, j] /= tmpCoef;
+          result[i, j] /= tmpCoef;
         }
         for (int k = i + 1; k < size; k++) {
-          double coef = transit[k, i];
+          double coef = process[k, i];
           for (int j = 0; j < size; ++j) {
-            transit[k, j] = transit[k, j] - transit[i, j] * coef;
-            res[k, j] = res[k, j] - res[i, j] * coef;
+            process[k, j] -= process[i, j] * coef;
+            result[k, j] -= result[i, j] * coef;
           }
         }
       }
-      double tmpCoeff = transit[size - 1, size - 1];
+      double tmpCoeff = process[size - 1, size - 1];
       for (int j = 0; j < size; ++j) {
-        transit[size - 1, j] = transit[size - 1, j] / tmpCoeff;
-        res[size - 1, j] = res[size - 1, j] / tmpCoeff;
+        process[size - 1, j] /= tmpCoeff;
+        result[size - 1, j] /= tmpCoeff;
       }
       for (int i = size - 1; i > 0; i--) {
         for (int k = i - 1; k >= 0; k--) {
-          double koef = transit[k, i];
+          double koef = process[k, i];
           for (int j = 0; j < size; ++j)
-            res[k, j] = res[k, j] - res[i, j] * koef;
+            result[k, j] -= result[i, j] * koef;
         }
       }
-      Matrix inverted = new Matrix(size);
-      inverted.ActionOverData((i, j) => inverted[i, j] = res[i, j]);
-      return res;
+      return result;
     }
 
     public object Clone() {
