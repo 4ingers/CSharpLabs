@@ -1,8 +1,6 @@
 ﻿using System;
 
 namespace Space9 {
-
-  delegate double Solver(double x);
   class Program {
     static void Main(string[] args) {
       double x1 = MathLab.Bisection(MathLab.F, MathLab.X1range, Constants.Epsilon);
