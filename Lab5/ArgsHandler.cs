@@ -25,7 +25,7 @@ namespace Lab5 {
         try { 
           result = FileHandler.ReadWords(path);
         }
-        catch (FileNotFoundException e) {
+        catch (FileNotFoundException) {
           throw;
         }
       }

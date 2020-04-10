@@ -1,102 +1,170 @@
 ﻿using System;
+using ConstantsSpace;
 
-/// Exceptions are left to add
 
-namespace Matrix {
-  public class Matrix : ICloneable {
-    private double[,] data;
+namespace ExceptionSpace {
+  public class Matrix : ICloneable, IEquatable<Matrix> {
+
+    private readonly double[,] data;
     public int Size { get; }
 
     public double this[int i, int j] { get => data[i, j]; private set => data[i, j] = value; }
 
     public Matrix(int size) {
       if (size < 1)
-        throw new NotImplementedException();
+        throw new ArgumentException("Wrong matrix size");
 
       Size = size;
       data = new double[size, size];
-      FillByZeros();
+      FillByNum(0);
+    }
+
+    public Matrix(int size, double num) {
+      if (size < 1)
+        throw new ArgumentException("Wrong matrix size");
+
+      Size = size;
+      data = new double[size, size];
+      FillByNum(num);
     }
 
     public Matrix(int size, double[,] array) {
       if (size < 1)
-        //TODO CustomException: Size
-        throw new NotImplementedException();
-
-      if (array == null || array.GetLength(0) != size || array.GetLength(1) != size)
-        //TODO CustomException: Array
-        throw new NotImplementedException();
+        throw new ArgumentException("Wrong matrix size");
+      if (array == null)
+        throw new ArgumentNullException("There is no initializer");
+      if (array.GetLength(0) != size || array.GetLength(1) != size)
+        throw new RankException();
 
       Size = size;
       data = (double[,])array.Clone();
     }
 
-    public Matrix(Matrix matrix) : this(matrix.Size, (double[,])matrix.data.Clone()) {}
+    public Matrix(Matrix matrix) {
+      if (matrix is null)
+        throw new ArgumentNullException();
+      
+      Size = matrix.Size;
+
+      if (Size < 1)
+        throw new ArgumentException("Wrong matrix size");
+      if (matrix.data == null)
+        throw new ArgumentNullException("There is no initializer");
+      if (matrix.data.GetLength(0) != Size || matrix.data.GetLength(1) != Size)
+        throw new RankException();
+
+      data = (double[,])matrix.data.Clone();
+    }
 
     public void ActionOverData(Action<int, int> action) {
       for (int i = 0; i < Size; i++)
         for (int j = 0; j < Size; j++)
-          action(i, j);     
+          action(i, j);
     }
 
-    public void FillByZeros() => ActionOverData((i, j) => this[i, j] = 0);
+    public void FillByNum(double num) => ActionOverData((i, j) => this[i, j] = num);
+
     public void SetIdentity() => ActionOverData((i, j) => this[i, j] = (i == j ? 1 : 0));
 
-    public static Matrix Add(Matrix lhs, Matrix rhs) {
-      Matrix result = new Matrix(lhs);
-      result.ActionOverData((i, j) => result[i, j] += rhs[i, j]);
+    public static Matrix Add(Matrix left, Matrix right) {
+      if (left.Size != right.Size)
+        throw new OperationException(System.Reflection.MethodBase.GetCurrentMethod().Name, "Different sizes");
+
+      Matrix result = new Matrix(left);
+      result.ActionOverData((i, j) => result[i, j] += right[i, j]);
       return result;
     }
 
-    public static Matrix Subtract(Matrix lhs, Matrix rhs) {
-      Matrix result = new Matrix(lhs);
-      result.ActionOverData((i, j) => result[i, j] -= rhs[i, j]);
+    public static Matrix Subtract(Matrix left, Matrix right) {
+      if (left.Size != right.Size)
+        throw new OperationException(System.Reflection.MethodBase.GetCurrentMethod().Name, "Different sizes");
+
+      Matrix result = new Matrix(left);
+      result.ActionOverData((i, j) => result[i, j] -= right[i, j]);
       return result;
     }
 
-    public static Matrix Multiply(Matrix lhs, Matrix rhs) {
-      Matrix result = new Matrix(lhs);
+    public static Matrix Multiply(Matrix left, Matrix right) {
+      if (left.Size != right.Size)
+        throw new OperationException(System.Reflection.MethodBase.GetCurrentMethod().Name, "Different sizes");
+
+      Matrix result = new Matrix(left);
       result.ActionOverData((x, y) => {
         double accumulator = 0;
-        for (int i = 0; i < lhs.Size; i++) 
-          accumulator += lhs[x, i] * rhs[i, y];
+        for (int i = 0; i < left.Size; i++)
+          accumulator += left[x, i] * right[i, y];
         result[x, y] = accumulator;
       });
       return result;
     }
 
-    public static Matrix Divide(Matrix lhs, Matrix rhs) {
-      return Multiply(lhs, rhs.Inverse());
+    public static Matrix Multiply(Matrix left, double right) {
+      Matrix result = new Matrix(left);
+      result.ActionOverData((i, j) => result[i, j] *= right);
+      return result;
     }
 
-    public static Matrix operator +(Matrix lhs, Matrix rhs) {
-      return Add(lhs, rhs);
+    public static Matrix Divide(Matrix left, Matrix right) {
+      if (left.Size != right.Size)
+        throw new OperationException(System.Reflection.MethodBase.GetCurrentMethod().Name, "Different sizes");
+
+      return Multiply(left, right.Inverse());
     }
 
-    public static Matrix operator -(Matrix lhs, Matrix rhs) {
-      return Subtract(lhs, rhs);
+    public static Matrix operator +(Matrix left, Matrix right) {
+      if (left.Size != right.Size)
+        throw new OperationException(System.Reflection.MethodBase.GetCurrentMethod().Name, "Different sizes");
+
+      return Add(left, right);
     }
 
-    public static Matrix operator *(Matrix lhs, Matrix rhs) {
-      return Multiply(lhs, rhs);
+    public static Matrix operator -(Matrix left, Matrix right) {
+      if (left.Size != right.Size)
+        throw new OperationException(System.Reflection.MethodBase.GetCurrentMethod().Name, "Different sizes");
+
+      return Subtract(left, right);
     }
 
-    public static Matrix operator /(Matrix lhs, Matrix rhs) {
-      return Divide(lhs, rhs);
+    public static Matrix operator *(Matrix left, Matrix right) {
+      if (left.Size != right.Size)
+        throw new OperationException(System.Reflection.MethodBase.GetCurrentMethod().Name, "Different sizes");
+
+      return Multiply(left, right);
     }
+
+    public static Matrix operator *(Matrix left, double right) {
+      return Multiply(left, right);
+    }
+
+    public static Matrix operator /(Matrix left, Matrix right) {
+      if (left.Size != right.Size)
+        throw new OperationException(System.Reflection.MethodBase.GetCurrentMethod().Name, "Different sizes");
+
+      return Divide(left, right);
+    }
+
+    public static bool operator ==(Matrix left, Matrix right) => left.Equals(right);
+
+    public static bool operator ==(Matrix left, double right) {
+      Matrix numberMatrix = new Matrix(left.Size, right);
+      return left.Equals(numberMatrix);
+    }
+
+    public static bool operator !=(Matrix left, Matrix right) => !(left == right);
+
+    public static bool operator !=(Matrix left, double right) => !(left == right);
 
     public Matrix Transpose() {
       Matrix transposed = new Matrix(Size);
-      for (int i = 0; i < Size; i++) {
-        for (int j = 0; j < Size; j++) {
-          transposed[i, j] = this[j, i];
-        }
-      }
+      ActionOverData((i, j) => transposed[i, j] = this[j, i]);
       return transposed;
     }
 
     public double Determinant() {
       double determinant = 1;
+
+      if (Size == 1)
+        return this[0, 0];
 
       Matrix processMatrix = new Matrix(this);
 
@@ -130,20 +198,18 @@ namespace Matrix {
     }
 
     public Matrix Inverse() {
-      // Нулевой определитель == необратимость матрицы
       if (Math.Abs(Determinant()) < Constants.Eps)
-        //TODO throw inversion_error();
-        throw new NotImplementedException();
+        throw new OperationException(System.Reflection.MethodBase.GetCurrentMethod().Name, "Determinant is 0");
 
       Matrix process = new Matrix(this);
       Matrix result = new Matrix(this.Size);
       result.SetIdentity();
 
-      int size = this.Size;
+      int size = Size;
 
       for (int i = 0; i < size - 1; i++) {
         int tmp = i;
-        while (Math.Abs(this[tmp, i]) < Constants.Eps && tmp < size) 
+        while (Math.Abs(this[tmp, i]) < Constants.Eps && tmp < size)
           tmp++;
         for (int j = 0; j < size; ++j) {
           double tmpMean = process[i, j];
@@ -182,8 +248,24 @@ namespace Matrix {
       return result;
     }
 
-    public object Clone() {
-      return new Matrix(this);
+    public object Clone() { return new Matrix(this); }
+
+    public override bool Equals(object obj) { return Equals(obj as Matrix); }
+
+    public bool Equals(Matrix other) {
+      if (other == null || Size != other.Size)
+        return false;
+
+      for (int i = 0; i < Size; i++) 
+        for (int j = 0; j < Size; j++) 
+          if (Math.Abs(this[i, j] - other[i, j]) > Constants.Eps)
+            return false;
+
+      return true;
     }
+
+
+    public override int GetHashCode() { throw new NotImplementedException(); }
+
   }
 }
