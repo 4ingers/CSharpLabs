@@ -6,5 +6,9 @@ namespace ExceptionSpace {
     public OperationException(string operation, string message) : base(message) {
       Operation = operation;
     }
+
+    public override string ToString() {
+      return $"OperationException handled: operation -- {Operation}; message -- {Message}";
+    }
   }
 }

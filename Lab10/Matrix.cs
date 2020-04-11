@@ -2,10 +2,11 @@
 using ConstantsSpace;
 using ExceptionSpace;
 using System.Text;
+using System.Collections;
 
 
 namespace MatrixSpace {
-  public class Matrix : ICloneable, IEquatable<Matrix> {
+  public class Matrix : ICloneable, IEquatable<Matrix>, IEnumerable {
 
     private readonly double[,] data;
     public int Size { get; }
@@ -33,7 +34,7 @@ namespace MatrixSpace {
     public Matrix(int size, double[,] array) {
       if (size < 1)
         throw new ArgumentException("Wrong matrix size");
-      if (array == null)
+      if (array is null)
         throw new ArgumentNullException("There is no initializer");
       if (array.GetLength(0) != size || array.GetLength(1) != size)
         throw new RankException("Sizes mismatch");
@@ -44,7 +45,7 @@ namespace MatrixSpace {
 
     public Matrix(Matrix matrix) {
       if (matrix is null)
-        throw new ArgumentNullException();
+        throw new ArgumentNullException(System.Reflection.MethodBase.GetCurrentMethod().Name);
       
       Size = matrix.Size;
 
@@ -59,16 +60,32 @@ namespace MatrixSpace {
     }
 
     public void ActionOverData(Action<int, int> action) {
+      if (this is null)
+        throw new ArgumentNullException(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
       for (int i = 0; i < Size; i++)
         for (int j = 0; j < Size; j++)
           action(i, j);
     }
 
-    public void FillByNum(double num) => ActionOverData((i, j) => this[i, j] = num);
+    public void FillByNum(double num) {
+      if (this is null)
+        throw new ArgumentNullException(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-    public void SetIdentity() => ActionOverData((i, j) => this[i, j] = (i == j ? 1 : 0));
+      ActionOverData((i, j) => this[i, j] = num);
+    }
+
+    public void SetIdentity() {
+      if (this is null)
+        throw new ArgumentNullException(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+      ActionOverData((i, j) => this[i, j] = i == j ? 1 : 0);
+    }
 
     public static Matrix Add(Matrix left, Matrix right) {
+      if (left is null || right is null)
+        throw new ArgumentNullException(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
       if (left.Size != right.Size)
         throw new OperationException(System.Reflection.MethodBase.GetCurrentMethod().Name, "Different sizes");
 
@@ -78,6 +95,9 @@ namespace MatrixSpace {
     }
 
     public static Matrix Subtract(Matrix left, Matrix right) {
+      if (left is null || right is null)
+        throw new ArgumentNullException(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
       if (left.Size != right.Size)
         throw new OperationException(System.Reflection.MethodBase.GetCurrentMethod().Name, "Different sizes");
 
@@ -87,6 +107,9 @@ namespace MatrixSpace {
     }
 
     public static Matrix Multiply(Matrix left, Matrix right) {
+      if (left is null || right is null)
+        throw new ArgumentNullException(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
       if (left.Size != right.Size)
         throw new OperationException(System.Reflection.MethodBase.GetCurrentMethod().Name, "Different sizes");
 
@@ -101,12 +124,18 @@ namespace MatrixSpace {
     }
 
     public static Matrix Multiply(Matrix left, double right) {
+      if (left is null)
+        throw new ArgumentNullException(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
       Matrix result = new Matrix(left);
       result.ActionOverData((i, j) => result[i, j] *= right);
       return result;
     }
 
     public static Matrix Divide(Matrix left, Matrix right) {
+      if (left is null || right is null)
+        throw new ArgumentNullException(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
       if (left.Size != right.Size)
         throw new OperationException(System.Reflection.MethodBase.GetCurrentMethod().Name, "Different sizes");
 
@@ -114,6 +143,9 @@ namespace MatrixSpace {
     }
 
     public static Matrix operator +(Matrix left, Matrix right) {
+      if (left is null || right is null)
+        throw new ArgumentNullException(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
       if (left.Size != right.Size)
         throw new OperationException(System.Reflection.MethodBase.GetCurrentMethod().Name, "Different sizes");
 
@@ -121,6 +153,9 @@ namespace MatrixSpace {
     }
 
     public static Matrix operator -(Matrix left, Matrix right) {
+      if (left is null || right is null)
+        throw new ArgumentNullException(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
       if (left.Size != right.Size)
         throw new OperationException(System.Reflection.MethodBase.GetCurrentMethod().Name, "Different sizes");
 
@@ -128,6 +163,9 @@ namespace MatrixSpace {
     }
 
     public static Matrix operator *(Matrix left, Matrix right) {
+      if (left is null || right is null)
+        throw new ArgumentNullException(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
       if (left.Size != right.Size)
         throw new OperationException(System.Reflection.MethodBase.GetCurrentMethod().Name, "Different sizes");
 
@@ -135,34 +173,64 @@ namespace MatrixSpace {
     }
 
     public static Matrix operator *(Matrix left, double right) {
+      if (left is null)
+        throw new ArgumentNullException(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
       return Multiply(left, right);
     }
 
     public static Matrix operator /(Matrix left, Matrix right) {
+      if (left is null || right is null)
+        throw new ArgumentNullException(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
       if (left.Size != right.Size)
         throw new OperationException(System.Reflection.MethodBase.GetCurrentMethod().Name, "Different sizes");
 
       return Divide(left, right);
     }
 
-    public static bool operator ==(Matrix left, Matrix right) => left.Equals(right);
+    public static bool operator ==(Matrix left, Matrix right) {
+      if (left is null || right is null)
+        throw new ArgumentNullException(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+      return left.Equals(right);
+    }
 
     public static bool operator ==(Matrix left, double right) {
+      if (left is null)
+        throw new ArgumentNullException(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
       Matrix numberMatrix = new Matrix(left.Size, right);
       return left.Equals(numberMatrix);
     }
 
-    public static bool operator !=(Matrix left, Matrix right) => !(left == right);
+    public static bool operator !=(Matrix left, Matrix right) {
+      if (left is null || right is null)
+        throw new ArgumentNullException(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-    public static bool operator !=(Matrix left, double right) => !(left == right);
+      return !(left == right);
+    }
+
+    public static bool operator !=(Matrix left, double right) {
+      if (left is null)
+        throw new ArgumentNullException(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+      return !(left == right);
+    }
 
     public Matrix Transpose() {
+      if (this is null)
+        throw new ArgumentNullException(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
       Matrix transposed = new Matrix(Size);
       ActionOverData((i, j) => transposed[i, j] = this[j, i]);
       return transposed;
     }
 
     public double Determinant() {
+      if (this is null)
+        throw new ArgumentNullException(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
       double determinant = 1;
 
       if (Size == 1)
@@ -200,6 +268,9 @@ namespace MatrixSpace {
     }
 
     public Matrix Inverse() {
+      if (this is null)
+        throw new ArgumentNullException(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
       if (Math.Abs(Determinant()) < Constants.Eps)
         throw new OperationException(System.Reflection.MethodBase.GetCurrentMethod().Name, "Determinant is 0");
 
@@ -250,12 +321,21 @@ namespace MatrixSpace {
       return result;
     }
 
-    public object Clone() { return new Matrix(this); }
+    public object Clone() {
+      if (this is null)
+        throw new ArgumentNullException(System.Reflection.MethodBase.GetCurrentMethod().Name);
+      return new Matrix(this); 
+    }
 
-    public override bool Equals(object obj) { return Equals(obj as Matrix); }
+    public override bool Equals(object obj) {
+      if (this is null || obj is null)
+        return false;
+
+      return Equals(obj as Matrix); 
+    }
 
     public bool Equals(Matrix other) {
-      if (other is null || Size != other.Size)
+      if (this is null || other is null || Size != other.Size)
         return false;
 
       for (int i = 0; i < Size; i++) 
@@ -270,6 +350,9 @@ namespace MatrixSpace {
     public override int GetHashCode() { throw new NotImplementedException(); }
 
     public override string ToString() {
+      if (this is null)
+        throw new ArgumentNullException(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
       if (data.GetLength(0) == 1)
         return $"({data[0, 0]})";
 
@@ -282,6 +365,10 @@ namespace MatrixSpace {
         sb.Append($"{this[i, data.GetLength(0) - 1]})\n");
       }
       return sb.ToString();
+    }
+
+    public IEnumerator GetEnumerator() {
+      return data.GetEnumerator();
     }
   }
 }
