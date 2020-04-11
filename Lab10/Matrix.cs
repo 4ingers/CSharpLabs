@@ -1,8 +1,10 @@
 ﻿using System;
 using ConstantsSpace;
+using ExceptionSpace;
+using System.Text;
 
 
-namespace ExceptionSpace {
+namespace MatrixSpace {
   public class Matrix : ICloneable, IEquatable<Matrix> {
 
     private readonly double[,] data;
@@ -34,7 +36,7 @@ namespace ExceptionSpace {
       if (array == null)
         throw new ArgumentNullException("There is no initializer");
       if (array.GetLength(0) != size || array.GetLength(1) != size)
-        throw new RankException();
+        throw new RankException("Sizes mismatch");
 
       Size = size;
       data = (double[,])array.Clone();
@@ -253,7 +255,7 @@ namespace ExceptionSpace {
     public override bool Equals(object obj) { return Equals(obj as Matrix); }
 
     public bool Equals(Matrix other) {
-      if (other == null || Size != other.Size)
+      if (other is null || Size != other.Size)
         return false;
 
       for (int i = 0; i < Size; i++) 
@@ -267,5 +269,19 @@ namespace ExceptionSpace {
 
     public override int GetHashCode() { throw new NotImplementedException(); }
 
+    public override string ToString() {
+      if (data.GetLength(0) == 1)
+        return $"({data[0, 0]})";
+
+      StringBuilder sb = new StringBuilder();
+
+      for (int i = 0; i < data.GetLength(0); i++) {
+        sb.Append("(");
+        for (int j = 0; j < data.GetLength(0) - 1; j++) 
+          sb.Append($"{this[i, j]}, ");
+        sb.Append($"{this[i, data.GetLength(0) - 1]})\n");
+      }
+      return sb.ToString();
+    }
   }
 }

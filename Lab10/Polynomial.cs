@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Linq;
 using System.Collections.Generic;
+using System.Text;
 
 using ExceptionSpace;
+using MatrixSpace;
 
 
 namespace PolynomialSpace {
@@ -55,8 +57,8 @@ namespace PolynomialSpace {
     }
 
     public static Polynomial<T> Subtract(Polynomial<T> left, Polynomial<T> right) {
-      Polynomial<T> result = new Polynomial<T>(right);
-      right.ActionOverData((power, coefficient) => result.AddMonom(power, (dynamic)coefficient * (-1)));
+      Polynomial<T> result = new Polynomial<T>();
+      right.ActionOverData((power, coefficient) => result.AddMonom(power, (dynamic)coefficient * -1.0));
       return left + result;
     }
 
@@ -64,7 +66,7 @@ namespace PolynomialSpace {
       Polynomial<T> result = new Polynomial<T>();
       left.ActionOverData((leftPower, leftCoefficient) => {
         right.ActionOverData((rightPower, rightCoefficient) => {
-          result.AddMonom(leftPower * rightPower, (dynamic)leftCoefficient * rightCoefficient);
+          result.AddMonom(leftPower + rightPower, (dynamic)leftCoefficient * rightCoefficient);
         });
       });
       return result;
@@ -84,6 +86,9 @@ namespace PolynomialSpace {
       var rightLast = right.monoms.Last();
       
       while (true) {
+        if (!dividend.monoms.Any())
+          return result;
+
         var dividendLast = dividend.monoms.Last();
 
         if (dividendLast.Key < rightLast.Key)
@@ -109,6 +114,9 @@ namespace PolynomialSpace {
       var rightLast = right.monoms.Last();
 
       while (true) {
+        if (!result.monoms.Any())
+          return result;
+
         var resultLast = result.monoms.Last();
 
         if (resultLast.Key < rightLast.Key)
@@ -164,7 +172,7 @@ namespace PolynomialSpace {
           product = 1;
 
         for (int i = monom.Key - 1; i > 0; i--)
-          product = product * monom.Value;
+          product = product * x;
         result = result + product * monom.Value;
       }
       return result;
@@ -197,15 +205,14 @@ namespace PolynomialSpace {
       // Cast checking
       Polynomial<T> other = obj as Polynomial<T>;
       if (other is null) throw new ArgumentException("Right hand side argument is not instance of Polynomial");
-
       // At least one is empty
-      if (monoms.Count == 0 && other.monoms.Count == 0)
+      if (!monoms.Any() && !other.monoms.Any())
         return 0;
-      else if (monoms.Count == 0)
+      else if (!monoms.Any())
         return -1;
-      else if (other.monoms.Count == 0)
+      else if (!other.monoms.Any())
         return 1;
-
+      
       // Degrees comparation
       if (monoms.Keys.Last() > other.monoms.Keys.Last())
         return 1;
@@ -217,7 +224,13 @@ namespace PolynomialSpace {
 
     public override bool Equals(object obj) { return ReferenceEquals(this, obj) ? true : this.CompareTo(obj) == 0; }
 
-    public override int GetHashCode() { throw new NotImplementedException(); } 
+    public override int GetHashCode() { throw new NotImplementedException(); }
+
+    public override string ToString() {
+      if (!monoms.Any())
+        return "0";
+      return string.Join(", ", monoms.Select(x => $"{x.Value}x{x.Key}").ToArray());
+    }
 
     //  --- Operators ---
     public static Polynomial<T> operator +(Polynomial<T> left, Polynomial<T> right) => Add(left, right);
