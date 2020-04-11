@@ -1,13 +1,14 @@
-﻿using System;
+﻿using ExceptionSpace;
 using MatrixSpace;
 using PolynomialSpace;
-using ExceptionSpace;
-using ConstantsSpace;
+using System;
 
 namespace Lab10 {
   class Program {
     static void Main(string[] args) {
+      
       Matrix m1 = null, m2 = null, m3 = null;
+
       try {
         m1 = new Matrix(2, new double[,] {
           { 2, 2 },

@@ -1,15 +1,16 @@
-﻿using System;
-using System.Linq;
-using System.Collections.Generic;
-using System.Text;
-
-using ExceptionSpace;
+﻿using ExceptionSpace;
 using MatrixSpace;
+using System;
 using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+
 
 namespace PolynomialSpace {
   public class Polynomial<T> : ICloneable, IComparable, IEnumerable<T> {
+
     private readonly SortedDictionary<int, T> monoms;
+
 
     public Polynomial() => monoms = new SortedDictionary<int, T>();
 
@@ -17,6 +18,7 @@ namespace PolynomialSpace {
       if (dict is null)
         throw new ArgumentNullException(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
+      // Check negative powers
       var negatives = dict.Keys.Where(power => power < 0).Count();
       if (negatives != 0)
         throw new ArgumentException("At least one negative degree was found");
@@ -115,7 +117,6 @@ namespace PolynomialSpace {
       Polynomial<T> dividend = new Polynomial<T>(left);
       Polynomial<T> result = new Polynomial<T>();
 
-      //? Is it correct?
       var rightLast = right.monoms.Last();
       
       while (true) {
@@ -127,7 +128,6 @@ namespace PolynomialSpace {
         if (dividendLast.Key < rightLast.Key)
           return result;
         else {
-          //? Simplify?
           foreach (var rightMonom in right.monoms) {
             if (rightMonom.Key == rightLast.Key)
               break;
@@ -146,7 +146,6 @@ namespace PolynomialSpace {
 
       Polynomial<T> result = new Polynomial<T>(left);
 
-      //? Is it correct?
       var rightLast = right.monoms.Last();
 
       while (true) {
@@ -158,7 +157,6 @@ namespace PolynomialSpace {
         if (resultLast.Key < rightLast.Key)
           return result;
         else {
-          //? Simplify?
           foreach (var rightMonom in right.monoms) {
             if (rightMonom.Key == rightLast.Key)
               break;
@@ -256,6 +254,7 @@ namespace PolynomialSpace {
       // Cast checking
       Polynomial<T> other = obj as Polynomial<T>;
       if (other is null) throw new ArgumentException("Right hand side argument is not instance of Polynomial");
+
       // At least one is empty
       if (!monoms.Any() && !other.monoms.Any())
         return 0;
@@ -273,7 +272,9 @@ namespace PolynomialSpace {
         return 0;
     }
 
-    public override bool Equals(object obj) { return ReferenceEquals(this, obj) ? true : this.CompareTo(obj) == 0; }
+    public override bool Equals(object obj) { 
+      return ReferenceEquals(this, obj) ? true : this.CompareTo(obj) == 0; 
+    }
 
     public override int GetHashCode() { throw new NotImplementedException(); }
 
@@ -285,7 +286,7 @@ namespace PolynomialSpace {
         return "0";
       return string.Join(", ", monoms.Select(x => $"{x.Value}x{x.Key}").ToArray());
     }
-
+    
     public IEnumerator<T> GetEnumerator() {
       foreach (var monom in monoms) {
         yield return monom.Value;

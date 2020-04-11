@@ -1,8 +1,8 @@
-﻿using System;
-using ConstantsSpace;
+﻿using ConstantsSpace;
 using ExceptionSpace;
-using System.Text;
+using System;
 using System.Collections;
+using System.Text;
 
 
 namespace MatrixSpace {
@@ -11,7 +11,7 @@ namespace MatrixSpace {
     private readonly double[,] data;
     public int Size { get; }
 
-    public double this[int i, int j] { get => data[i, j]; private set => data[i, j] = value; }
+    public double this[int i, int j] { get => data[i, j]; set => data[i, j] = value; }
 
     public Matrix(int size) {
       if (size < 1)
@@ -79,7 +79,7 @@ namespace MatrixSpace {
       if (this is null)
         throw new ArgumentNullException(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-      ActionOverData((i, j) => this[i, j] = i == j ? 1 : 0);
+      ActionOverData((i, j) => this[i, j] = (i == j ? 1 : 0));
     }
 
     public static Matrix Add(Matrix left, Matrix right) {
@@ -354,15 +354,15 @@ namespace MatrixSpace {
         throw new ArgumentNullException(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
       if (data.GetLength(0) == 1)
-        return $"({data[0, 0]})";
+        return $"({Math.Round(data[0, 0], 3)})";
 
       StringBuilder sb = new StringBuilder();
 
       for (int i = 0; i < data.GetLength(0); i++) {
         sb.Append("(");
         for (int j = 0; j < data.GetLength(0) - 1; j++) 
-          sb.Append($"{this[i, j]}, ");
-        sb.Append($"{this[i, data.GetLength(0) - 1]})\n");
+          sb.Append($"{Math.Round(this[i, j], 3)}, ");
+        sb.Append($"{Math.Round(this[i, data.GetLength(0) - 1], 3)})\n");
       }
       return sb.ToString();
     }
