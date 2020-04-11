@@ -26,16 +26,7 @@ namespace PolynomialSpace {
       monoms = new SortedDictionary<int, T>(dict);
     }
 
-    public Polynomial(Polynomial<T> polynomial) : this(polynomial.monoms) {
-      if (polynomial is null || polynomial.monoms is null)
-        throw new ArgumentNullException(System.Reflection.MethodBase.GetCurrentMethod().Name);
-
-      var negatives = polynomial.monoms.Keys.Where(power => power < 0).Count();
-      if (negatives != 0)
-        throw new ArgumentException("At least one negative degree was found");
-
-      monoms = new SortedDictionary<int, T>(polynomial.monoms);
-    }
+    public Polynomial(Polynomial<T> polynomial) : this(polynomial.monoms) {}
 
     public void ActionOverData(Action<int, T> action) {
       if (this is null)
@@ -262,14 +253,27 @@ namespace PolynomialSpace {
         return -1;
       else if (!other.monoms.Any())
         return 1;
-      
-      // Degrees comparation
-      if (monoms.Keys.Last() > other.monoms.Keys.Last())
+
+      var comparison = monoms.Zip(other.monoms, (leftMonom, rightMonom) => {
+        if (leftMonom.Key > rightMonom.Key)
+          return 1;
+        else if (leftMonom.Key < rightMonom.Key)
+          return -1;
+
+        if (Math.Abs((dynamic)leftMonom.Value - rightMonom.Value) < ConstantsSpace.Constants.Eps)
+          return 0;
+        else if ((dynamic)leftMonom.Value < rightMonom.Value)
+          return -1;
         return 1;
-      else if (monoms.Keys.Last() < other.monoms.Keys.Last())
-        return -1;
-      else
-        return 0;
+      });
+
+      foreach (var comparisonValues in comparison.Reverse()) {
+        if (comparisonValues == 1)
+          return 1;
+        else if (comparisonValues == -1)
+          return -1;
+      }
+      return 0;
     }
 
     public override bool Equals(object obj) { 
@@ -283,7 +287,7 @@ namespace PolynomialSpace {
         throw new ArgumentNullException(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
       if (!monoms.Any())
-        return "0";
+        return "0x0";
       return string.Join(", ", monoms.Select(x => $"{x.Value}x{x.Key}").ToArray());
     }
     

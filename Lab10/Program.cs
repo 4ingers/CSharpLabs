@@ -32,8 +32,8 @@ namespace Lab10 {
       }
 
       try {
-        Console.WriteLine(m3);
-        Console.WriteLine(m3.Determinant());
+        //Console.WriteLine(m3);
+        //Console.WriteLine(m3.Determinant());
       }
       catch (Exception e) when (e is ArgumentNullException) {
         Console.Error.WriteLine(e.Message);
@@ -42,18 +42,17 @@ namespace Lab10 {
       try {
         Polynomial<double> p1 = new Polynomial<double>();
         p1.AddMonom(2, 1);
-        p1.AddMonom(1, 1);
-        p1.AddMonom(1, 0);
-        p1.AddMonom(2, -2);
+        p1.AddMonom(0, -1);
 
         Polynomial<double> p2 = new Polynomial<double>();
         p2.AddMonom(2, 1);
-        p2.AddMonom(1, 1);
-        p2.AddMonom(1, 0);
-        p2.AddMonom(2, -2);
-        p2.AddMonom(3, 1);
+        p2.AddMonom(0, 1);
 
         Console.WriteLine(p1 < p2);
+        
+
+        Console.WriteLine(p1 - p2);
+        Console.WriteLine(p1 * p2);
       }
       catch (Exception e) when (e is ArgumentNullException || e is ArgumentException) {
         Console.Error.WriteLine(e.Message);
@@ -62,9 +61,9 @@ namespace Lab10 {
 
       try {
         Polynomial<Matrix> pm1 = new Polynomial<Matrix>(new System.Collections.Generic.SortedDictionary<int, Matrix>{
-        { 1, m2 }
-      });
-        Console.WriteLine(pm1.ValueMatrix(m2.Inverse()));
+          { 1, m2 }
+        });
+        //Console.WriteLine(pm1.ValueMatrix(Matrix.Inverse(m2)));
       }
       catch (Exception e) when (e is ArgumentNullException || e is ArgumentException) {
         Console.Error.WriteLine(e.Message);
@@ -79,6 +78,7 @@ namespace Lab10 {
       Matrix e2 = new Matrix(1, new double[,] {
         { 2 }
       });
+
       Polynomial<Matrix> P = new Polynomial<Matrix>(new System.Collections.Generic.SortedDictionary<int, Matrix> {
         { 2, e1 },
         { 1, e2 },
@@ -89,23 +89,23 @@ namespace Lab10 {
         { 0, e1 }
       });
       try {
-        Console.WriteLine(P / p / p);
+        //Console.WriteLine(P / p / p);
       }
       catch (Exception e) when (e is OperationException) {
         Console.Error.WriteLine(e.ToString());
       }
 
-      Console.WriteLine(P.ValueMatrix(new Matrix(1, 0)));
-      Console.WriteLine("\n\n\n");
+      //Console.WriteLine(P.ValueMatrix(new Matrix(1, 0)));
+      //Console.WriteLine("\n\n\n");
 
       foreach (var element in m3) {
-        Console.Write($"{element}   ");
+        //Console.Write($"{element}   ");
       }
 
-      Console.WriteLine("\n\n\n");
+      //Console.WriteLine("\n\n\n");
 
       foreach (var monom in P) {
-        Console.Write($"{monom.Determinant()}   ");
+        //Console.Write($"{monom.Determinant()}   ");
       }
     }
   }

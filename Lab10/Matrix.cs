@@ -6,8 +6,8 @@ using System.Text;
 
 
 namespace MatrixSpace {
-  public class Matrix : ICloneable, IEquatable<Matrix>, IEnumerable {
-
+  public class Matrix : ICloneable, IEquatable<Matrix>, IEnumerable, IComparable {
+    
     private readonly double[,] data;
     public int Size { get; }
 
@@ -43,21 +43,7 @@ namespace MatrixSpace {
       data = (double[,])array.Clone();
     }
 
-    public Matrix(Matrix matrix) {
-      if (matrix is null)
-        throw new ArgumentNullException(System.Reflection.MethodBase.GetCurrentMethod().Name);
-      
-      Size = matrix.Size;
-
-      if (Size < 1)
-        throw new ArgumentException("Wrong matrix size");
-      if (matrix.data == null)
-        throw new ArgumentNullException("There is no initializer");
-      if (matrix.data.GetLength(0) != Size || matrix.data.GetLength(1) != Size)
-        throw new RankException();
-
-      data = (double[,])matrix.data.Clone();
-    }
+    public Matrix(Matrix matrix) : this(matrix.Size, matrix.data) { }
 
     public void ActionOverData(Action<int, int> action) {
       if (this is null)
@@ -139,7 +125,7 @@ namespace MatrixSpace {
       if (left.Size != right.Size)
         throw new OperationException(System.Reflection.MethodBase.GetCurrentMethod().Name, "Different sizes");
 
-      return Multiply(left, right.Inverse());
+      return Multiply(left, Inverse(right));
     }
 
     public static Matrix operator +(Matrix left, Matrix right) {
@@ -193,15 +179,14 @@ namespace MatrixSpace {
       if (left is null || right is null)
         throw new ArgumentNullException(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-      return left.Equals(right);
+      return left.CompareTo(right) == 0;
     }
 
     public static bool operator ==(Matrix left, double right) {
       if (left is null)
         throw new ArgumentNullException(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-      Matrix numberMatrix = new Matrix(left.Size, right);
-      return left.Equals(numberMatrix);
+      return Math.Abs(left.Determinant() - right) < Constants.Eps;
     }
 
     public static bool operator !=(Matrix left, Matrix right) {
@@ -218,13 +203,30 @@ namespace MatrixSpace {
       return !(left == right);
     }
 
-    public Matrix Transpose() {
-      if (this is null)
+    public static bool operator <(Matrix left, Matrix right) {
+      return left.CompareTo(right) < 0;
+    }
+
+    public static bool operator <=(Matrix left, Matrix right) {
+      return left.CompareTo(right) <= 0;
+    }
+
+    public static bool operator >(Matrix left, Matrix right) {
+      return left.CompareTo(right) > 0;
+    }
+
+    public static bool operator >=(Matrix left, Matrix right) {
+      return left.CompareTo(right) >= 0;
+    }
+
+    //! FIXED: static
+    public static Matrix Transpose(Matrix matrix) {
+      if (matrix is null)
         throw new ArgumentNullException(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-      Matrix transposed = new Matrix(Size);
-      ActionOverData((i, j) => transposed[i, j] = this[j, i]);
-      return transposed;
+      Matrix result = new Matrix(matrix.Size);
+      matrix.ActionOverData((i, j) => result[i, j] = matrix[j, i]);
+      return result;
     }
 
     public double Determinant() {
@@ -232,9 +234,6 @@ namespace MatrixSpace {
         throw new ArgumentNullException(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
       double determinant = 1;
-
-      if (Size == 1)
-        return this[0, 0];
 
       Matrix processMatrix = new Matrix(this);
 
@@ -267,22 +266,23 @@ namespace MatrixSpace {
       return determinant;
     }
 
-    public Matrix Inverse() {
-      if (this is null)
+    //! FIXED: static
+    public static Matrix Inverse(Matrix matrix) {
+      if (matrix is null)
         throw new ArgumentNullException(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-      if (Math.Abs(Determinant()) < Constants.Eps)
+      if (Math.Abs(matrix.Determinant()) < Constants.Eps)
         throw new OperationException(System.Reflection.MethodBase.GetCurrentMethod().Name, "Determinant is 0");
 
-      Matrix process = new Matrix(this);
-      Matrix result = new Matrix(this.Size);
+      Matrix process = new Matrix(matrix);
+      Matrix result = new Matrix(matrix.Size);
       result.SetIdentity();
 
-      int size = Size;
+      int size = matrix.Size;
 
       for (int i = 0; i < size - 1; i++) {
         int tmp = i;
-        while (Math.Abs(this[tmp, i]) < Constants.Eps && tmp < size)
+        while (Math.Abs(matrix[tmp, i]) < Constants.Eps && tmp < size)
           tmp++;
         for (int j = 0; j < size; ++j) {
           double tmpMean = process[i, j];
@@ -370,5 +370,23 @@ namespace MatrixSpace {
     public IEnumerator GetEnumerator() {
       return data.GetEnumerator();
     }
+
+    public int CompareTo(object obj) {
+      if (this is null || obj is null)
+        throw new ArgumentNullException(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+      // Cast checking
+      if (!(obj is Matrix other))
+        throw new ArgumentException("Right hand side argument is not instance of Polynomial");
+
+      double difference = this.Determinant() - other.Determinant();
+      if (Math.Abs(difference) < Constants.Eps)
+        return 0;
+      else if (difference > 0)
+        return 1;
+      else
+        return -1;
+    }
+
   }
 }
