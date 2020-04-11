@@ -1,5 +1,4 @@
 ﻿using ExceptionSpace;
-using MatrixSpace;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -159,12 +158,11 @@ namespace PolynomialSpace {
       }
     }
 
-    public T ValueMatrix<T>(T x) where T : Matrix {
+    public T Value(T x) {
       if (this is null || x is null)
         throw new ArgumentNullException(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-      dynamic result;
-      result = new Matrix((x as Matrix).Size, 0);
+      dynamic result = (dynamic)x - x;
 
       if (monoms.Count == 0)
         return result;
@@ -175,35 +173,10 @@ namespace PolynomialSpace {
         if (0 != monom.Key)
           product = x;
         else
-          product = new Matrix((monom.Value as Matrix).Size, 1);
+          product = (dynamic)x - x + 1;
 
         for (int i = monom.Key - 1; i > 0; i--) 
           product = product * monom.Value;
-        result = result + product * monom.Value;
-      }
-      return result;
-    }
-
-    public T ValueStruct<T>(T x) where T : struct {
-      if (this is null)
-        throw new ArgumentNullException(System.Reflection.MethodBase.GetCurrentMethod().Name);
-
-      dynamic result;
-      result = 0;
-
-      if (monoms.Count == 0)
-        return result;
-
-      dynamic product;
-
-      foreach (var monom in monoms) {
-        if (0 != monom.Key)
-          product = x;
-        else 
-          product = 1;
-
-        for (int i = monom.Key - 1; i > 0; i--)
-          product = product * x;
         result = result + product * monom.Value;
       }
       return result;
@@ -231,6 +204,7 @@ namespace PolynomialSpace {
       return result;
     }
 
+
     public object Clone() {
       if (this is null)
         throw new ArgumentNullException(System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -239,14 +213,13 @@ namespace PolynomialSpace {
     }
 
     public int CompareTo(object obj) {
-      if (this is null || obj is null)
-        throw new ArgumentNullException(System.Reflection.MethodBase.GetCurrentMethod().Name);
+      if (obj is null)
+        return this is null ? 0 : 1;
+      if (!(obj is Polynomial<T> other))
+        return this is null ? 0 : 1;
+      if (this is null)
+        return -1;
 
-      // Cast checking
-      Polynomial<T> other = obj as Polynomial<T>;
-      if (other is null) throw new ArgumentException("Right hand side argument is not instance of Polynomial");
-
-      // At least one is empty
       if (!monoms.Any() && !other.monoms.Any())
         return 0;
       else if (!monoms.Any())
@@ -254,42 +227,29 @@ namespace PolynomialSpace {
       else if (!other.monoms.Any())
         return 1;
 
-      var comparison = monoms.Zip(other.monoms, (leftMonom, rightMonom) => {
+      var e1 = monoms.Reverse().GetEnumerator();
+      var e2 = other.monoms.Reverse().GetEnumerator();
+
+      while (e1.MoveNext() && e2.MoveNext()) {
+        var leftMonom = e1.Current;
+        var rightMonom = e2.Current;
+
         if (leftMonom.Key > rightMonom.Key)
           return 1;
         else if (leftMonom.Key < rightMonom.Key)
           return -1;
 
-        if (Math.Abs((dynamic)leftMonom.Value - rightMonom.Value) < ConstantsSpace.Constants.Eps)
-          return 0;
-        else if ((dynamic)leftMonom.Value < rightMonom.Value)
-          return -1;
-        return 1;
-      });
-
-      foreach (var comparisonValues in comparison.Reverse()) {
-        if (comparisonValues == 1)
-          return 1;
-        else if (comparisonValues == -1)
-          return -1;
+        if (Math.Abs((dynamic)leftMonom.Value - rightMonom.Value) > ConstantsSpace.Constants.Eps) {
+          if ((dynamic)leftMonom.Value > rightMonom.Value)
+            return 1;
+          else 
+            return -1;
+        }
       }
-      return 0;
+      return monoms.Count().CompareTo(other.monoms.Count());
     }
 
-    public override bool Equals(object obj) { 
-      return ReferenceEquals(this, obj) ? true : this.CompareTo(obj) == 0; 
-    }
-
-    public override int GetHashCode() { throw new NotImplementedException(); }
-
-    public override string ToString() {
-      if (this is null)
-        throw new ArgumentNullException(System.Reflection.MethodBase.GetCurrentMethod().Name);
-
-      if (!monoms.Any())
-        return "0x0";
-      return string.Join(", ", monoms.Select(x => $"{x.Value}x{x.Key}").ToArray());
-    }
+    public override bool Equals(object obj) => ReferenceEquals(this, obj) ? true : this.CompareTo(obj) == 0;
     
     public IEnumerator<T> GetEnumerator() {
       foreach (var monom in monoms) {
@@ -297,9 +257,12 @@ namespace PolynomialSpace {
       }
     }
 
-    IEnumerator IEnumerable.GetEnumerator() {
-      return GetEnumerator();
+    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
+    public override string ToString() {
+      return !monoms.Any() ? "0x0" : string.Join(", ", monoms.Select(x => $"{x.Value}x{x.Key}").ToArray());
     }
+
 
     //  --- Operators ---
     public static Polynomial<T> operator +(Polynomial<T> left, Polynomial<T> right) {
@@ -344,46 +307,16 @@ namespace PolynomialSpace {
       return Modulo(left, right);
     }
 
-    public static bool operator ==(Polynomial<T> left, Polynomial<T> right) {
-      if (left is null || right is null)
-        throw new ArgumentNullException(System.Reflection.MethodBase.GetCurrentMethod().Name);
+    public static bool operator ==(Polynomial<T> left, Polynomial<T> right) => left.CompareTo(right) == 0;
 
-      return left.CompareTo(right) == 0;
-    }
+    public static bool operator !=(Polynomial<T> left, Polynomial<T> right) => left.CompareTo(right) != 0;
 
-    public static bool operator !=(Polynomial<T> left, Polynomial<T> right) {
-      if (left is null || right is null)
-        throw new ArgumentNullException(System.Reflection.MethodBase.GetCurrentMethod().Name);
+    public static bool operator >(Polynomial<T> left, Polynomial<T> right) => left.CompareTo(right) == 1;
 
-      return left.CompareTo(right) != 0;
-    }
+    public static bool operator >=(Polynomial<T> left, Polynomial<T> right) => left.CompareTo(right) >= 0;
 
-    public static bool operator >(Polynomial<T> left, Polynomial<T> right) {
-      if (left is null || right is null)
-        throw new ArgumentNullException(System.Reflection.MethodBase.GetCurrentMethod().Name);
+    public static bool operator <(Polynomial<T> left, Polynomial<T> right) => left.CompareTo(right) == -1;
 
-      return left.CompareTo(right) == 1;
-    }
-
-    public static bool operator >=(Polynomial<T> left, Polynomial<T> right) {
-      if (left is null || right is null)
-        throw new ArgumentNullException(System.Reflection.MethodBase.GetCurrentMethod().Name);
-
-      return left.CompareTo(right) >= 0;
-    }
-
-    public static bool operator <(Polynomial<T> left, Polynomial<T> right) {
-      if (left is null || right is null)
-        throw new ArgumentNullException(System.Reflection.MethodBase.GetCurrentMethod().Name);
-
-      return left.CompareTo(right) == -1;
-    }
-
-    public static bool operator <=(Polynomial<T> left, Polynomial<T> right) {
-      if (left is null || right is null)
-        throw new ArgumentNullException(System.Reflection.MethodBase.GetCurrentMethod().Name);
-
-      return left.CompareTo(right) <= 0;
-    }
+    public static bool operator <=(Polynomial<T> left, Polynomial<T> right) => left.CompareTo(right) <= 0;
   }
 }

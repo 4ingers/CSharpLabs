@@ -95,7 +95,7 @@ namespace Lab10 {
         Console.Error.WriteLine(e.ToString());
       }
 
-      //Console.WriteLine(P.ValueMatrix(new Matrix(1, 0)));
+      Console.WriteLine(P.Value(new Matrix(1, 0)));
       //Console.WriteLine("\n\n\n");
 
       foreach (var element in m3) {
