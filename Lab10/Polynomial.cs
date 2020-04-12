@@ -6,7 +6,7 @@ using System.Linq;
 
 
 namespace PolynomialSpace {
-  public class Polynomial<T> : ICloneable, IComparable, IEnumerable<T> {
+  public class Polynomial<T> : ICloneable, IComparable<Polynomial<T>>, IEnumerable<T>, IEquatable<Polynomial<T>> {
 
     private readonly SortedDictionary<int, T> monoms;
 
@@ -15,7 +15,7 @@ namespace PolynomialSpace {
 
     public Polynomial(SortedDictionary<int, T> dict) {
       if (dict is null)
-        throw new ArgumentNullException(System.Reflection.MethodBase.GetCurrentMethod().Name);
+        throw new ArgumentNullException(nameof(dict));
 
       // Check negative powers
       var negatives = dict.Keys.Where(power => power < 0).Count();
@@ -159,8 +159,8 @@ namespace PolynomialSpace {
     }
 
     public T Value(T x) {
-      if (this is null || x is null)
-        throw new ArgumentNullException(System.Reflection.MethodBase.GetCurrentMethod().Name);
+      if (x is null)
+        throw new ArgumentNullException(nameof(x));
 
       dynamic result = (dynamic)x - x;
 
@@ -212,13 +212,33 @@ namespace PolynomialSpace {
       return new Polynomial<T>(this); 
     }
 
+    public override bool Equals(object obj) {
+      if (ReferenceEquals(this, obj))
+        return true;
+
+      if (obj is null)
+        return false;
+
+      return Equals(obj as Polynomial<T>);
+    }
+
+    public bool Equals(Polynomial<T> other) {
+      if (other! is Polynomial<T>)
+        return false;
+
+      return CompareTo(other) == 0;
+    }
+
     public int CompareTo(object obj) {
       if (obj is null)
-        return this is null ? 0 : 1;
-      if (!(obj is Polynomial<T> other))
-        return this is null ? 0 : 1;
-      if (this is null)
-        return -1;
+        throw new ArgumentNullException("Object is null");
+
+      return CompareTo(obj as Polynomial<T>);
+    }
+
+    public int CompareTo(Polynomial<T> other) {
+      if (!(other is Polynomial<T>))
+        throw new ArgumentException("Object is not a Polynomial");
 
       if (!monoms.Any() && !other.monoms.Any())
         return 0;
@@ -242,15 +262,13 @@ namespace PolynomialSpace {
         if (Math.Abs((dynamic)leftMonom.Value - rightMonom.Value) > ConstantsSpace.Constants.Eps) {
           if ((dynamic)leftMonom.Value > rightMonom.Value)
             return 1;
-          else 
+          else
             return -1;
         }
       }
       return monoms.Count().CompareTo(other.monoms.Count());
     }
 
-    public override bool Equals(object obj) => ReferenceEquals(this, obj) ? true : this.CompareTo(obj) == 0;
-    
     public IEnumerator<T> GetEnumerator() {
       foreach (var monom in monoms) {
         yield return monom.Value;

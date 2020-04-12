@@ -2,11 +2,12 @@
 using ExceptionSpace;
 using System;
 using System.Collections;
+using System.Diagnostics.CodeAnalysis;
 using System.Text;
 
 
 namespace MatrixSpace {
-  public class Matrix : ICloneable, IEquatable<Matrix>, IEnumerable, IComparable {
+  public class Matrix : ICloneable, IEquatable<Matrix>, IEnumerable, IComparable<Matrix> {
     
     private readonly double[,] data;
     public int Size { get; }
@@ -132,7 +133,6 @@ namespace MatrixSpace {
       return Multiply(left, Inverse(right));
     }
 
-    //! FIXED: static
     public static Matrix Transpose(Matrix matrix) {
       if (matrix is null)
         throw new ArgumentNullException(System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -179,7 +179,6 @@ namespace MatrixSpace {
       return determinant;
     }
 
-    //! FIXED: static
     public static Matrix Inverse(Matrix matrix) {
       if (matrix is null)
         throw new ArgumentNullException(System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -241,29 +240,33 @@ namespace MatrixSpace {
       return new Matrix(this);
     }
 
-    public override bool Equals(object obj) => Equals(obj as Matrix);
+    public override bool Equals(object obj) {
+      if (ReferenceEquals(this, obj))
+        return true;
 
-    public bool Equals(Matrix other) {
-      if (this is null || other is null || Size != other.Size)
+      if (obj is null)
         return false;
 
-      for (int i = 0; i < Size; i++)
-        for (int j = 0; j < Size; j++)
-          if (Math.Abs(this[i, j] - other[i, j]) > Constants.Eps)
-            return false;
-
-      return true;
+      return Equals(obj as Matrix);
     }
 
-    public IEnumerator GetEnumerator() => data.GetEnumerator();
+    public bool Equals(Matrix other) {
+      if (other! is Matrix)
+        return false;
+
+      return CompareTo(other) == 0;
+    }
 
     public int CompareTo(object obj) {
       if (obj is null)
-        return this is null ? 0 : 1;
-      if (!(obj is Matrix other))
-        return this is null ? 0 : 1;
-      if (this is null)
-        return -1;
+        throw new ArgumentNullException("Object is null");
+
+      return CompareTo(obj as Matrix);
+    }
+
+    public int CompareTo(Matrix other) {
+      if (!(other is Matrix))
+        throw new ArgumentException("Object is not a Polynomial");
 
       double difference = this.Determinant() - other.Determinant();
 
@@ -274,6 +277,8 @@ namespace MatrixSpace {
       else
         return -1;
     }
+
+    public IEnumerator GetEnumerator() => data.GetEnumerator();
 
     public override string ToString() {
       if (this is null)
