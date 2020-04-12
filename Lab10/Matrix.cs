@@ -10,7 +10,9 @@ namespace MatrixSpace {
   public class Matrix : ICloneable, IEquatable<Matrix>, IEnumerable, IComparable<Matrix> {
     
     private readonly double[,] data;
+    
     public int Size { get; }
+
 
     public double this[int i, int j] { get => data[i, j]; set => data[i, j] = value; }
 
