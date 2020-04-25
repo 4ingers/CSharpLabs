@@ -10,23 +10,20 @@ namespace Lab12Space {
       }
 
       string path = args[0];
-      var analyser = new FrequencyAnalyser(path);
 
       try {
-        // If no optioal argumets passed - print the frequecy data
+        var analyser = new FrequencyAnalyser(path);
+
         if (args.Length == 1) {
-          foreach (var kvp in analyser.Analyse()) {
-            Console.WriteLine($"{kvp.Key}: {kvp.Value}");
-          }
+          foreach (var item in analyser.Analyse())
+            Console.WriteLine($"{item.Key} : {item.Value}");
         }
 
-        // If top frequent are needed
+        // If max counts are needed
         else if (args.Length == 2) {
-          // Check if arguments are right, if not the greet user with manual
-          if (string.Compare("top", args[1]) == 0) {
-            foreach (var kvp in analyser.Top()) {
-              Console.WriteLine($"{kvp.Key}: {kvp.Value}");
-            }
+          if (string.Compare("max", args[1]) == 0) {
+            foreach (var kvp in analyser.Max())
+              Console.WriteLine($"{kvp.Key} : {kvp.Value}");
           }
           else {
             PrintUsageManual();
@@ -35,31 +32,28 @@ namespace Lab12Space {
 
         // If search is required
         if (args.Length == 3) {
-          if (string.Compare("search", args[1]) == 0) {
-            var query = args[2].ToLower();
-            int frequency = analyser.Search(query);
-            Console.WriteLine(
-              frequency == -1 ?
-                "No such word in this file" :
-                $"{query}: {frequency}"
-            );
+          if (args[1].Equals("search")) {
+            var token = args[2].ToLower();
+            int count = analyser.Search(token);
+            Console.WriteLine(count == -1 ? "No such word in this file" : $"{token} : {count}");
           }
           else {
             PrintUsageManual();
           }
         }
       }
-      // Path is not valid
-      catch (ArgumentException e) {
-        Console.WriteLine(e.Message);
+      // Invalid path
+      catch (ArgumentException) {
+        Console.Error.WriteLine("Invalid path");
       }
-
     }
 
     private static void PrintUsageManual() {
-      Console.WriteLine("<path>");
-      Console.WriteLine("<path> top");
-      Console.WriteLine("<path> search <query>");
+      Console.WriteLine(
+        "*path*\n" +
+        "*path* max\n" +
+        "*path* search *token*\n"
+      );
     }
   }
 }
