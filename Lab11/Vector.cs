@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Linq;
 
 //TODO Null-checks
@@ -22,6 +21,9 @@ namespace Lab11Space {
       if (dimension < 1)
         throw new RankException();
       coordinates = new T[dimension];
+      for (int i = 0; i < dimension; i++) {
+        coordinates[i] = (dynamic)0;
+      }
     }
 
     public Vector(T[] array) => coordinates = array;
@@ -45,14 +47,7 @@ namespace Lab11Space {
     public static implicit operator T[](Vector<T> vector) => vector.coordinates.Clone() as T[];
 
     // --------------SECTION: Formatting-------------- //
-    public override string ToString() {
-      //StringBuilder sb = new StringBuilder("<");
-      //foreach (var value in coordinates) 
-      //  sb.Append($"{value.ToString()}, ");
-      //sb.Append($"{coordinates.Last().ToString()}>");
-      //return sb.ToString();
-      return $"<{string.Join(", ", coordinates)}>";
-    }
+    public override string ToString() => $"<{string.Join(", ", coordinates)}>";
 
 
     // --------------SECTION: Implementations of interfaces-------------- //
@@ -223,7 +218,7 @@ namespace Lab11Space {
     public static T DotProduct(Vector<T> lhs, Vector<T> rhs) {
       T result = (dynamic)0;
       for (int i = 0; i < lhs.Dimension; i++)
-        result = (dynamic)result + ((dynamic)lhs[i] * Complex.Conjugate(rhs[i] as Complex));
+        result = (dynamic)result + ((dynamic)lhs[i] * Complex.Conjugate((dynamic)rhs[i]));
       return result;
     }
 
@@ -265,20 +260,26 @@ namespace Lab11Space {
     }
 
     public static IEnumerable<Vector<T>> Orthogonalize(IEnumerable<Vector<T>> system) {
-      var tmpVector = new Vector<T>();
-      var sumVector = new Vector<T>();
+      int dim = system.First().Dimension;
+      var sumVector = new Vector<T>(dim);
       var b_j = new List<Vector<T>>();
 
       for (int i = 0; i < system.Count(); i++) {
         var system_i = system.ElementAt(i);
         for (int j = 0; j < i; j++) {
           T k = (dynamic)DotProduct(system_i, b_j[j]) / DotProduct(b_j[j], b_j[j]);
-          sumVector = Sum(sumVector, Multiply(b_j[j], k));
+          sumVector += Multiply(b_j[j], k);
         }
-        b_j[i] = Subtract(system_i, sumVector);
-        sumVector = tmpVector;
+        b_j.Add(system_i - sumVector);
+        sumVector.FillByValue((dynamic)0);
       }
       return b_j;
+    }
+
+    private void FillByValue(T value) {
+      for (int i = 0; i < Dimension; i++) {
+        coordinates[i] = value;
+      }
     }
 
   }

@@ -20,7 +20,7 @@ namespace Lab11Space {
 
 
     // --------------SECTION: Constructors and factory methods------------ //
-    public Complex() { }
+    public Complex() : this(Zero) { }
     public Complex(double number) => Real = number;
     public Complex(double real, double imaginary) : this(real) => Imaginary = imaginary;
     public Complex(Complex complex) : this(complex.Real, complex.Imaginary) { }
