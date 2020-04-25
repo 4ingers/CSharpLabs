@@ -17,9 +17,6 @@ namespace Lab12Space {
 
 
     public void Initialize() {
-      if (!File.Exists(path))
-        throw new ArgumentException($"There is no such file at path <{path}>");
-
       foreach (var line in File.ReadLines(path)) {
         var simplified = Regex.Replace(line.ToLower(), @"[^\w\d ]", " ");
         var words = simplified.Split(' ', StringSplitOptions.RemoveEmptyEntries);
