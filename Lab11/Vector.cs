@@ -2,8 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 
-//TODO Null-checks
-
 namespace Lab11Space {
   class Vector<T> : ICloneable, IEquatable<Vector<T>>, IComparable<Vector<T>>, IComparable where T : new() {
 
@@ -16,14 +14,13 @@ namespace Lab11Space {
 
 
     // --------------SECTION: Constructors---------- //
-    private Vector() { }
     public Vector(int dimension) {
-      if (dimension < 1)
+      if (dimension < 1) 
         throw new RankException();
+
       coordinates = new T[dimension];
-      for (int i = 0; i < dimension; i++) {
+      for (int i = 0; i < dimension; i++) 
         coordinates[i] = (dynamic)0;
-      }
     }
 
     public Vector(T[] array) => coordinates = array;
@@ -220,6 +217,15 @@ namespace Lab11Space {
       for (int i = 0; i < lhs.Dimension; i++)
         result = (dynamic)result + ((dynamic)lhs[i] * Complex.Conjugate((dynamic)rhs[i]));
       return result;
+    }
+
+
+    public double Abs() {
+      double sum = 0;
+      foreach (var coordinate in coordinates) {
+        sum += Math.Pow(Complex.Abs((dynamic)coordinate), 2);
+      }
+      return Math.Sqrt(sum);
     }
 
     public double GetNorm() {

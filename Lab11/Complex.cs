@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Linq;
 
-//TODO AutoNullCheck
-
 namespace Lab11Space {
   class Complex : ICloneable, IEquatable<Complex>, IComparable<Complex>, IComparable {
 
@@ -31,7 +29,6 @@ namespace Lab11Space {
 
     // --------------SECTION: Cast operators-------------- //
     public static implicit operator Complex(double value) => new Complex(value, 0.0);
-
     public static implicit operator double(Complex value) => value.Real;
 
 
@@ -83,7 +80,7 @@ namespace Lab11Space {
         throw new ArgumentException("Object is not a Complex");
 
       double difference = this.Magnitude - other.Magnitude;
-
+      
       if (Math.Abs(difference) < Constants.Eps)
         return 0;
       else if (difference > 0)

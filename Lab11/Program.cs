@@ -10,10 +10,10 @@ namespace Lab11Space {
         Console.WriteLine(value.ToString());
       }
 
-      //// Testing event
-      //Complex divident = 7;
-      //Complex.DivisionByZero += c_DivisionByZero;
-      //Console.WriteLine(divident / 0);
+      // Testing event
+      Complex.DivisionByZero += c_DivisionByZero;
+      Complex divident = 7;
+      Console.WriteLine(divident / 0);
 
       Vector<Complex> vc = new Vector<Complex>(new Complex[] {
         3, 4, Complex.ImaginaryOne

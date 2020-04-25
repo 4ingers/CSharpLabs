@@ -1,32 +1,51 @@
 ﻿using System;
-using System.Linq;
 
 
 namespace Lab12Space {
   class Program {
     static void Main(string[] args) {
-      // Check for command line arguments
       if (args.Length == 0) {
-        // Greet user with short usage manual
-        Console.WriteLine("[Usage] <path> <word>");
+        PrintUsageManual();
         Environment.Exit(0);
       }
 
       string path = args[0];
+      var analyser = new FrequencyAnalyser(path);
 
       try {
-        var result = FrequencyAnalysis.Analyse(path);
-        // If search is required
-        if (args.Length == 2) {
-          var key = args[1].ToLower();
-          Console.WriteLine(
-            result.ContainsKey(key) ? $"{key}: {result[key]}" :
-            "No such word in this file"
-          );
-        }
-        else {
-          foreach (var kvp in result.OrderByDescending(key => key.Value)) {
+        // If no optioal argumets passed - print the frequecy data
+        if (args.Length == 1) {
+          foreach (var kvp in analyser.Analyse()) {
             Console.WriteLine($"{kvp.Key}: {kvp.Value}");
+          }
+        }
+
+        // If top frequent are needed
+        else if (args.Length == 2) {
+          // Check if arguments are right, if not the greet user with manual
+          if (string.Compare("top", args[1]) == 0) {
+            foreach (var kvp in analyser.Top()) {
+              Console.WriteLine($"{kvp.Key}: {kvp.Value}");
+            }
+          }
+          else {
+            PrintUsageManual();
+          }
+        }
+
+        // If search is required
+        if (args.Length == 3) {
+          if (string.Compare("search", args[1]) == 0) {
+            var query = args[2].ToLower();
+            int frequency = analyser.Search(query);
+            Console.WriteLine(
+              frequency == -1 ?
+                "No such word in this file" :
+                $"{query}: {frequency}"
+            );
+          }
+          else {
+            PrintUsageManual();
           }
         }
       }
@@ -35,6 +54,12 @@ namespace Lab12Space {
         Console.WriteLine(e.Message);
       }
 
+    }
+
+    private static void PrintUsageManual() {
+      Console.WriteLine("<path>");
+      Console.WriteLine("<path> top");
+      Console.WriteLine("<path> search <query>");
     }
   }
 }
