@@ -20,20 +20,19 @@ namespace Lab12Space {
       var analyser = new FrequencyAnalyser(path);
 
       // --- All the words ---
-      if (args.Length == 1) {
-        foreach (var item in analyser.Analyse())
+      if (args.Length == 1) 
+        foreach (var item in analyser.Analyse()) 
           Console.WriteLine($"{item.Key} : {item.Value}");
-      }
+
       // --- Max ---
       else if (args.Length == 2) {
-        if (args[1].Equals("max")) {
-          foreach (var kvp in analyser.Max())
+        if (args[1].Equals("max")) 
+          foreach (var kvp in analyser.Max()) 
             Console.WriteLine($"{kvp.Key} : {kvp.Value}");
-        }
-        else {
+        else
           PrintUsageManual();
-        }
       }
+
       // --- Find ---
       else if (args.Length == 3) {
         if (args[1].Equals("search")) {
@@ -41,9 +40,8 @@ namespace Lab12Space {
           int count = analyser.Search(token);
           Console.WriteLine(count == -1 ? "No such word in this file" : $"{token} : {count}");
         }
-        else {
+        else 
           PrintUsageManual();
-        }
       }
     }
 
