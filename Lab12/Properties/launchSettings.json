@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Lab12": {
+      "commandName": "Project",
+      "commandLineArgs": "D:\\School\\C#\\CSharpLabs\\Lab12\\1.txt ушел"
+    }
+  }
+}

@@ -236,11 +236,7 @@ namespace MatrixSpace {
     }
 
 
-    public object Clone() {
-      if (this is null)
-        throw new ArgumentNullException(System.Reflection.MethodBase.GetCurrentMethod().Name);
-      return new Matrix(this);
-    }
+    public object Clone() => new Matrix(this);
 
     public override bool Equals(object obj) {
       if (ReferenceEquals(this, obj))
