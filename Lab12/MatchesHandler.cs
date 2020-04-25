@@ -1,16 +1,17 @@
 ﻿using System;
 using System.IO;
 using System.Text.RegularExpressions;
+using System.Text;
 using System.Collections.Generic;
 using System.Linq;
 
 
 namespace Lab12Space {
-  class FrequencyAnalyser { 
+  class MatchesHandler { 
     private readonly Dictionary<string, int> dict;
     private readonly string path;
 
-    public FrequencyAnalyser(string path) {
+    public MatchesHandler(string path) {
       dict = new Dictionary<string, int>();
       this.path = path;
     }
@@ -29,25 +30,37 @@ namespace Lab12Space {
     }
 
 
-    public IEnumerable<KeyValuePair<string, int>> Analyse() {
+    public string All() {
       if (dict.Count() == 0)
         Initialize();
-      return dict.OrderByDescending(item => item.Value);
+
+      StringBuilder sb = new StringBuilder();
+
+      foreach (var item in dict.OrderByDescending(item => item.Value))
+        sb.Append($"{item.Key} : {item.Value}\n");
+
+      return sb.ToString();
     }
 
-    public IEnumerable<KeyValuePair<string, int>> Max() {
+    public string Top() {
       if (dict.Count() == 0)
         Initialize();
       var sorted = dict.OrderByDescending(item => item.Value);
       var max = sorted.First().Value;
-      return sorted.Where(item => item.Value == max);
+
+      StringBuilder sb = new StringBuilder();
+
+      foreach (var item in sorted.Where(item => item.Value == max))
+        sb.Append($"{item.Key} : {item.Value}\n");
+
+      return sb.ToString();
     }
 
 
-    public int Search(string token) {
+    public string Find(string token) {
       if (dict.Count() == 0)
         Initialize();
-      return dict.ContainsKey(token) ? dict[token] : -1;
+      return $"{token} : {(dict.ContainsKey(token) ? dict[token] : 0)}";
     }
   }
 }

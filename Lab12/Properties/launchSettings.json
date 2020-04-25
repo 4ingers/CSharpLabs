@@ -2,7 +2,7 @@
   "profiles": {
     "Lab12": {
       "commandName": "Project",
-      "commandLineArgs": "D:\\School\\C#\\CSharpLabs\\Lab12\\3.txt "
+      "commandLineArgs": "D:\\School\\C#\\CSharpLabs\\Lab12\\1.txt search ушел"
     }
   }
 }

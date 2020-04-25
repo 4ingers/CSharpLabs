@@ -5,47 +5,45 @@ using System.IO;
 namespace Lab12Space {
   class Program {
     static void Main(string[] args) {
+
       if (args.Length == 0) {
-        PrintUsageManual();
+        Help();
         Environment.Exit(0);
       }
 
       string path = args[0];
 
       if (!File.Exists(path)) {
-        Console.Error.WriteLine($"There is no such file at path <{path}>");
+        Console.Error.WriteLine($"File at {path} not found");
         Environment.Exit(-1);
       }
 
-      var analyser = new FrequencyAnalyser(path);
+      var handler = new MatchesHandler(path);
 
       // --- All the words ---
       if (args.Length == 1) 
-        foreach (var item in analyser.Analyse()) 
-          Console.WriteLine($"{item.Key} : {item.Value}");
+        Console.WriteLine(handler.All());
 
       // --- Max ---
       else if (args.Length == 2) {
         if (args[1].Equals("max")) 
-          foreach (var kvp in analyser.Max()) 
-            Console.WriteLine($"{kvp.Key} : {kvp.Value}");
+          Console.WriteLine(handler.Top());
         else
-          PrintUsageManual();
+          Help();
       }
 
       // --- Find ---
       else if (args.Length == 3) {
         if (args[1].Equals("search")) {
           var token = args[2].ToLower();
-          int count = analyser.Search(token);
-          Console.WriteLine(count == -1 ? "No such word in this file" : $"{token} : {count}");
+          Console.WriteLine(handler.Find(token));
         }
         else 
-          PrintUsageManual();
+          Help();
       }
     }
 
-    private static void PrintUsageManual() {
+    private static void Help() {
       Console.WriteLine(
         "*path*\n" +
         "*path* max\n" +
