@@ -18,10 +18,9 @@ namespace Lab12Space {
           foreach (var item in analyser.Analyse())
             Console.WriteLine($"{item.Key} : {item.Value}");
         }
-
         // If max counts are needed
         else if (args.Length == 2) {
-          if (string.Compare("max", args[1]) == 0) {
+          if (args[1].Equals("max")) {
             foreach (var kvp in analyser.Max())
               Console.WriteLine($"{kvp.Key} : {kvp.Value}");
           }
@@ -29,9 +28,8 @@ namespace Lab12Space {
             PrintUsageManual();
           }
         }
-
         // If search is required
-        if (args.Length == 3) {
+        else if (args.Length == 3) {
           if (args[1].Equals("search")) {
             var token = args[2].ToLower();
             int count = analyser.Search(token);
