@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Linq;
-using System.Collections;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
@@ -10,43 +10,59 @@ using System.Threading.Tasks;
 namespace Lab13Space {
   class FileSearch {
 
-    ArrayList files;
-    public ArrayList FoundFiles { get => (ArrayList)files.Clone(); }
+    List<string> files;
+    public List<string> FoundFiles { get => files; }
 
 
     public FileSearch() {
-      files = new ArrayList();
+      files = new List<string>();
     }
 
     public FileSearch(string fileName) : this() {
+      object locker = new object();
       Parallel.ForEach(DriveInfo.GetDrives(), drive => {
-        ApplyAllFiles(new DirectoryInfo(drive.Name), fileName, file => files.Add(file));
+        List<string> filesInDrive = new List<string>();
+        
+        ApplyAllFiles(new DirectoryInfo(drive.Name), fileName, file => filesInDrive.Add(file));
+
+        lock (locker) {
+          files.AddRange(filesInDrive);
+        }  
       });
     }
 
     public FileSearch(string fileName, string driveName) : this() {
-      files = new ArrayList();
       ApplyAllFiles(new DirectoryInfo(driveName), fileName, file => files.Add(file));
     }
     
 
 
     public void FindAllAtDrive(string fileName, string driveName) {
+      files.Clear();
       ApplyAllFiles(new DirectoryInfo(driveName), fileName, file => files.Add(file));
     }
 
+
     public void FindAll(string fileName) {
       files.Clear();
+
+      object locker = new object();
       Parallel.ForEach(DriveInfo.GetDrives(), drive => {
-        FindAllAtDrive(fileName, drive.Name);
+        List<string> filesInDrive = new List<string>();
+
+        ApplyAllFiles(new DirectoryInfo(drive.Name), fileName, file => filesInDrive.Add(file));
+
+        lock (locker) {
+          files.AddRange(filesInDrive);
+        }
       });
     }
 
 
-    void ApplyAllFiles(DirectoryInfo directory, string pattern, Action<FileInfo> fileAction) {
+    static void ApplyAllFiles(DirectoryInfo directory, string pattern, Action<string> fileAction) {
       try {
         foreach (FileInfo file in directory.GetFiles(pattern)) {
-          fileAction(file);
+          fileAction(file.FullName);
         }
       }
       catch (UnauthorizedAccessException) {
@@ -73,9 +89,10 @@ namespace Lab13Space {
 
         if (int.TryParse(c, out int i) && i > 0 && i <= files.Count) {
           --i;
-          FileInfo file = files[i] as FileInfo;
+          string file = files[i];
+
           Process proc = new Process();
-          proc.StartInfo.FileName = file.FullName;
+          proc.StartInfo.FileName = file;
           proc.StartInfo.UseShellExecute = true;
           proc.Start();            
         }
@@ -98,7 +115,7 @@ namespace Lab13Space {
 
         if (int.TryParse(inputFileNum, out int fileNum) && files.Count > 0 && fileNum <= files.Count) {
           --fileNum;
-          FileInfo file = files[fileNum] as FileInfo;
+          string file = files[fileNum];
 
           Console.Write($"1 -- compress{Environment.NewLine}" +
                       $"2 -- decompress{Environment.NewLine}" +
@@ -107,10 +124,10 @@ namespace Lab13Space {
           var actionNum = Console.ReadLine();
 
           if (actionNum == "1") {
-            Compress(file.FullName, file.FullName + ".zzz");
+            Compress(file, file+ ".zzz");
           }
-          else if (actionNum == "2" && file.Extension == ".zzz") {
-            Decompress(file.FullName, file.FullName.SkipLast(4).ToString());
+          else if (actionNum == "2" && file.EndsWith(".zzz")) {
+            Decompress(file, file.SkipLast(4).ToString());
           }       
         }
       }
@@ -152,8 +169,8 @@ namespace Lab13Space {
 
     public void Print() {
       int i = 0;
-      foreach (FileInfo file in files) 
-        Console.WriteLine($"{++i}. {file.FullName}");
+      foreach (string file in files) 
+        Console.WriteLine($"{++i}. {file}");
       Console.WriteLine();
     }
   }
