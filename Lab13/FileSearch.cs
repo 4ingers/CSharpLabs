@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Linq;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -32,14 +31,16 @@ namespace Lab13Space {
     }
 
     public FileSearch(string fileName, string driveName) : this() {
-      ApplyAllFiles(new DirectoryInfo(driveName), fileName, file => files.Add(file));
+      if (Directory.Exists(driveName))
+        ApplyAllFiles(new DirectoryInfo(driveName), fileName, file => files.Add(file));
     }
     
 
 
     public void FindAllAtDrive(string fileName, string driveName) {
       files.Clear();
-      ApplyAllFiles(new DirectoryInfo(driveName), fileName, file => files.Add(file));
+      if (Directory.Exists(driveName))
+        ApplyAllFiles(new DirectoryInfo(driveName), fileName, file => files.Add(file));
     }
 
 
@@ -83,6 +84,7 @@ namespace Lab13Space {
       while (true) {
         Console.Write("Type number of file you want to open (\"q\" -- to quit): ");
         var c = Console.ReadLine();
+        Console.WriteLine();
 
         if (c == "q")
           break;
@@ -109,6 +111,7 @@ namespace Lab13Space {
       while (true) {
         Console.Write("Type number of file to compress/decompress (\"q\" -- to quit): ");
         var inputFileNum = Console.ReadLine();
+        Console.WriteLine();
 
         if (inputFileNum == "q")
           break;
@@ -117,52 +120,56 @@ namespace Lab13Space {
           --fileNum;
           string file = files[fileNum];
 
-          Console.Write($"1 -- compress{Environment.NewLine}" +
-                      $"2 -- decompress{Environment.NewLine}" +
-                      $"q -- quit{Environment.NewLine}" +
-                      $"Your choice: ");
+          Console.WriteLine($"1 -- compress{Environment.NewLine}" +
+                        $"2 -- decompress{Environment.NewLine}" +
+                        $"q -- quit{Environment.NewLine}");
+          Console.Write("Your choice: ");
           var actionNum = Console.ReadLine();
+          Console.WriteLine();
 
-          if (actionNum == "1") {
-            Compress(file, file+ ".zzz");
-          }
-          else if (actionNum == "2" && file.EndsWith(".zzz")) {
-            Decompress(file, file.SkipLast(4).ToString());
-          }       
+          bool success = true;
+          if (actionNum == "1") 
+            success = Compress(file);
+          else if (actionNum == "2") 
+            success = Decompress(file);
+
+          if (!success)
+            Console.WriteLine("Failed");
         }
       }
     }
 
 
-    public static bool Compress(string sourceFile, string targetFile) {
-      if (!File.Exists(sourceFile) || sourceFile == targetFile)
+    static bool Compress(string sourceFile) {
+      if (!File.Exists(sourceFile))
         return false;
 
       using FileStream sourceStream = new FileStream(sourceFile, FileMode.Open);
-      using FileStream targetStream = File.Create(targetFile);
+      using FileStream targetStream = File.Create(sourceFile + ".zzz");
 
       using GZipStream compressionStream = new GZipStream(targetStream, CompressionMode.Compress);
 
       sourceStream.CopyTo(compressionStream);
 
-      Console.WriteLine($"File {sourceStream.Name} compressed to {targetStream.Name}.");
+      Console.WriteLine($"File {sourceStream.Name} compressed to {targetStream.Name}{Environment.NewLine}");
 
       return true;
     }
 
 
-    public static bool Decompress(string sourceFile, string targetFile) {
-      if (!File.Exists(sourceFile) || sourceFile == targetFile)
+    static bool Decompress(string sourceFile) {
+      if (!File.Exists(sourceFile) || !sourceFile.EndsWith(".zzz"))
         return false;
 
       using FileStream sourceStream = new FileStream(sourceFile, FileMode.Open);
-      using FileStream targetStream = File.Create(targetFile);
+      string newFile = sourceFile.Remove(sourceFile.Length - 4);
+      using FileStream targetStream = File.Create(newFile);
 
       using GZipStream decompressionStream = new GZipStream(sourceStream, CompressionMode.Decompress);
 
       decompressionStream.CopyTo(targetStream);
 
-      Console.WriteLine($"File {sourceStream.Name} decompressed to {targetStream.Name}");
+      Console.WriteLine($"File {sourceStream.Name} decompressed to {targetStream.Name}{Environment.NewLine}");
       return true;
     }
 
@@ -173,5 +180,6 @@ namespace Lab13Space {
         Console.WriteLine($"{++i}. {file}");
       Console.WriteLine();
     }
+
   }
 }
