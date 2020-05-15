@@ -1,75 +1,81 @@
 ﻿using System;
-using System.Text;
+using System.Linq;
 using System.Collections;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
+using System.Threading.Tasks;
 
-//TODO Проверка количества файлов, 
-//TODO Убрать статичность
-//TODO Сжатие/разжатие как отдельные методы
 
 namespace Lab13Space {
   class FileSearch {
 
-    ArrayList filesInfo;
-
-    public ArrayList Files { get => filesInfo; private set => filesInfo = value; }
+    ArrayList files;
+    public ArrayList FoundFiles { get => (ArrayList)files.Clone(); }
 
 
     public FileSearch() {
-      Files = new ArrayList();
+      files = new ArrayList();
     }
 
-
-    public FileSearch(string fileName) {
-      Files = new ArrayList();
-
-      foreach (DriveInfo drive in DriveInfo.GetDrives()) {
-        DirectoryInfo directories = new DirectoryInfo(drive.Name);
-        foreach (var dir in directories.GetDirectories()) {
-          try {
-            foreach (var file in dir.GetFiles(fileName, SearchOption.AllDirectories))
-              Files.Add(file);
-          }
-          catch (UnauthorizedAccessException) {
-            //Console.WriteLine(e.Message);
-          }
-        }
-      }
+    public FileSearch(string fileName) : this() {
+      Parallel.ForEach(DriveInfo.GetDrives(), drive => {
+        ApplyAllFiles(new DirectoryInfo(drive.Name), fileName, file => files.Add(file));
+      });
     }
 
+    public FileSearch(string fileName, string driveName) : this() {
+      files = new ArrayList();
+      ApplyAllFiles(new DirectoryInfo(driveName), fileName, file => files.Add(file));
+    }
+    
+
+
+    public void FindAllAtDrive(string fileName, string driveName) {
+      ApplyAllFiles(new DirectoryInfo(driveName), fileName, file => files.Add(file));
+    }
 
     public void FindAll(string fileName) {
-      foreach (DriveInfo drive in DriveInfo.GetDrives()) {
-        DirectoryInfo directories = new DirectoryInfo(drive.Name);
-        foreach (var dir in directories.GetDirectories()) {
-          try {
-            foreach (var file in dir.GetFiles(fileName, SearchOption.AllDirectories)) 
-              filesInfo.Add(file);
-          }
-          catch (UnauthorizedAccessException) {
-            //Console.WriteLine(e.Message);
-          }
+      files.Clear();
+      Parallel.ForEach(DriveInfo.GetDrives(), drive => {
+        FindAllAtDrive(fileName, drive.Name);
+      });
+    }
+
+
+    void ApplyAllFiles(DirectoryInfo directory, string pattern, Action<FileInfo> fileAction) {
+      try {
+        foreach (FileInfo file in directory.GetFiles(pattern)) {
+          fileAction(file);
         }
+      }
+      catch (UnauthorizedAccessException) {
+        return;
+      }
+      foreach (DirectoryInfo deeperDirectory in directory.GetDirectories()) {
+        ApplyAllFiles(deeperDirectory, pattern, fileAction);
       }
     }
 
-    public void FileOpener() {
-      if (Files.Count == 0)
+
+    public void OpenMenu() {
+      if (files.Count == 0)
         return;
 
+      Print();
+
       while (true) {
-        Console.WriteLine("Type number of file you want to open (\"exit\" -- to Exit): ");
+        Console.Write("Type number of file you want to open (\"q\" -- to quit): ");
         var c = Console.ReadLine();
 
-        if (c == "exit")
+        if (c == "q")
           break;
 
-        if (int.TryParse(c, out int num) && Files.Count > 0 && Files.Count <= num) {
-          FileInfo fileInfo = Files[num] as FileInfo;
+        if (int.TryParse(c, out int i) && i > 0 && i <= files.Count) {
+          --i;
+          FileInfo file = files[i] as FileInfo;
           Process proc = new Process();
-          proc.StartInfo.FileName = fileInfo.FullName;
+          proc.StartInfo.FileName = file.FullName;
           proc.StartInfo.UseShellExecute = true;
           proc.Start();            
         }
@@ -77,70 +83,78 @@ namespace Lab13Space {
     }
 
 
-    public void FileZipper() {
-      if (Files.Count != 0) {
-        while (true) {
-          Console.WriteLine("Type number of file you want to compress/decompress (\"exit\" -- to Exit): ");
-          var c = Console.ReadLine();
+    public void GZipMenu() {
+      if (files.Count == 0)
+        return;
 
-          if (c == "exit")
-            break;
+      Print();
 
-          if (int.TryParse(c, out int i) && Files.Count > 0 && Files.Count <= i) {
-            FileInfo fileInfo = Files[i] as FileInfo;
-              
-            if (fileInfo.Extension == ".cmprsd") {
-              Console.WriteLine("You are going to decompress the file. Enter the full name: ");
-              string targetFile = Console.ReadLine();
-              Decompressor(fileInfo.FullName, targetFile);
-            }
-            else {
-              Console.WriteLine("You are going to compress the file. Enter the full name without extension: ");
-              string compressedFile = Console.ReadLine();
-              compressedFile += ".cmprsd";
-              Compressor(fileInfo.FullName, compressedFile);
-            }
-              
+      while (true) {
+        Console.Write("Type number of file to compress/decompress (\"q\" -- to quit): ");
+        var inputFileNum = Console.ReadLine();
+
+        if (inputFileNum == "q")
+          break;
+
+        if (int.TryParse(inputFileNum, out int fileNum) && files.Count > 0 && fileNum <= files.Count) {
+          --fileNum;
+          FileInfo file = files[fileNum] as FileInfo;
+
+          Console.Write($"1 -- compress{Environment.NewLine}" +
+                      $"2 -- decompress{Environment.NewLine}" +
+                      $"q -- quit{Environment.NewLine}" +
+                      $"Your choice: ");
+          var actionNum = Console.ReadLine();
+
+          if (actionNum == "1") {
+            Compress(file.FullName, file.FullName + ".zzz");
           }
+          else if (actionNum == "2" && file.Extension == ".zzz") {
+            Decompress(file.FullName, file.FullName.SkipLast(4).ToString());
+          }       
         }
       }
     }
 
 
-    public static void Compressor(string sourceFile, string compressedFile) {
-      // source file stream
-      using FileStream sourceStream = new FileStream(sourceFile, FileMode.OpenOrCreate);
-      // target file stream
-      using FileStream targetStream = File.Create(compressedFile);
-      // compression stream
+    public static bool Compress(string sourceFile, string targetFile) {
+      if (!File.Exists(sourceFile) || sourceFile == targetFile)
+        return false;
+
+      using FileStream sourceStream = new FileStream(sourceFile, FileMode.Open);
+      using FileStream targetStream = File.Create(targetFile);
+
       using GZipStream compressionStream = new GZipStream(targetStream, CompressionMode.Compress);
 
       sourceStream.CopyTo(compressionStream);
-      Console.WriteLine($"File {sourceFile} compressed. Size before: {sourceStream.Length}  size after: {targetStream.Length}.");
-      Console.WriteLine($"Saved to {targetStream.Name}");
+
+      Console.WriteLine($"File {sourceStream.Name} compressed to {targetStream.Name}.");
+
+      return true;
     }
 
 
-    public static void Decompressor(string compressedFile, string targetFile) {
-      // source file stream
-      using FileStream sourceStream = new FileStream(compressedFile, FileMode.OpenOrCreate);
-      // target file stream
+    public static bool Decompress(string sourceFile, string targetFile) {
+      if (!File.Exists(sourceFile) || sourceFile == targetFile)
+        return false;
+
+      using FileStream sourceStream = new FileStream(sourceFile, FileMode.Open);
       using FileStream targetStream = File.Create(targetFile);
-      // decompression stream
+
       using GZipStream decompressionStream = new GZipStream(sourceStream, CompressionMode.Decompress);
 
       decompressionStream.CopyTo(targetStream);
-      Console.WriteLine($"File decompressed: {targetFile}");
+
+      Console.WriteLine($"File {sourceStream.Name} decompressed to {targetStream.Name}");
+      return true;
     }
 
 
-    public string Print() {
-      StringBuilder sb = new StringBuilder();
-
-      for (int i = 0; i < filesInfo.Count; ++i)
-        sb.Append($"{i}. {(Files[i] as FileInfo).FullName}{Environment.NewLine}");
-
-      return sb.ToString();
+    public void Print() {
+      int i = 0;
+      foreach (FileInfo file in files) 
+        Console.WriteLine($"{++i}. {file.FullName}");
+      Console.WriteLine();
     }
   }
 }
