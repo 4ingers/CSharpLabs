@@ -10,7 +10,7 @@ namespace Lab13Space {
         fs.FindAll(args[0]);
       }
       else if (args.Length == 2) {
-        Console.WriteLine($"Search: {args[0]}{Environment.NewLine}Drive : {args[1]}");
+        Console.WriteLine($"Search: {args[0]}{Environment.NewLine}Start path : {args[1]}");
         fs.FindAllAtDrive(args[0], args[1]);
       }
       else {
@@ -38,7 +38,7 @@ namespace Lab13Space {
         "-- HELP --" + Environment.NewLine +
         "Args:" + Environment.NewLine +
         "  1. File" + Environment.NewLine +
-        "  2. Drive (not required) [A: or A:\\]" + Environment.NewLine
+        "  2. Start path (not required)" + Environment.NewLine
       );
     }
 

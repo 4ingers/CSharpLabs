@@ -20,6 +20,10 @@ namespace Lab13Space {
     public FileSearch(string fileName) : this() {
       object locker = new object();
       Parallel.ForEach(DriveInfo.GetDrives(), drive => {
+
+        if (drive.DriveType != DriveType.Fixed && drive.DriveType != DriveType.Removable)
+          return;
+
         List<string> filesInDrive = new List<string>();
         
         ApplyAllFiles(new DirectoryInfo(drive.Name), fileName, file => filesInDrive.Add(file));
@@ -30,17 +34,17 @@ namespace Lab13Space {
       });
     }
 
-    public FileSearch(string fileName, string driveName) : this() {
-      if (Directory.Exists(driveName))
-        ApplyAllFiles(new DirectoryInfo(driveName), fileName, file => files.Add(file));
+    public FileSearch(string fileName, string startPath) : this() {
+      if (Directory.Exists(startPath))
+        ApplyAllFiles(new DirectoryInfo(startPath), fileName, file => files.Add(file));
     }
     
 
 
-    public void FindAllAtDrive(string fileName, string driveName) {
+    public void FindAllAtDrive(string fileName, string startPath) {
       files.Clear();
-      if (Directory.Exists(driveName))
-        ApplyAllFiles(new DirectoryInfo(driveName), fileName, file => files.Add(file));
+      if (Directory.Exists(startPath))
+        ApplyAllFiles(new DirectoryInfo(startPath), fileName, file => files.Add(file));
     }
 
 
@@ -49,6 +53,10 @@ namespace Lab13Space {
 
       object locker = new object();
       Parallel.ForEach(DriveInfo.GetDrives(), drive => {
+
+        if (drive.DriveType != DriveType.Fixed && drive.DriveType != DriveType.Removable)
+          return;
+
         List<string> filesInDrive = new List<string>();
 
         ApplyAllFiles(new DirectoryInfo(drive.Name), fileName, file => filesInDrive.Add(file));
