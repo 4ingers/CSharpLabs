@@ -62,7 +62,9 @@ namespace Lab13Space {
         "-- HELP --" + Environment.NewLine +
         "Args:" + Environment.NewLine +
         "  1. File" + Environment.NewLine +
-        "  2. Start path (not required)" + Environment.NewLine
+        "  [2. Start path]" + Environment.NewLine +
+        "  X. -o -- open menu" + Environment.NewLine +
+        "     -z -- GZip menu" + Environment.NewLine
       );
     }
 
