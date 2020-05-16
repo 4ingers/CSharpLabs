@@ -52,7 +52,8 @@ namespace Lab13Space {
         }
       }
       
-      Help();      
+      Help();
+      Environment.Exit(-1);
     }
 
 
