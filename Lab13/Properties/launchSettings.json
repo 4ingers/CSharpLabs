@@ -2,7 +2,7 @@
   "profiles": {
     "Lab13": {
       "commandName": "Project",
-      "commandLineArgs": "\"Военка Оценки - Лист1.pdf\" C:\\Users\\why4ingers\\Downloads"
+      "commandLineArgs": "1.tex D:\\School -o"
     }
   }
 }

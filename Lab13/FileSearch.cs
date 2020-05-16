@@ -41,7 +41,7 @@ namespace Lab13Space {
     
 
 
-    public void FindAllAtDrive(string fileName, string startPath) {
+    public void FindAllFrom(string fileName, string startPath) {
       files.Clear();
       if (Directory.Exists(startPath))
         ApplyAllFiles(new DirectoryInfo(startPath), fileName, file => files.Add(file));
