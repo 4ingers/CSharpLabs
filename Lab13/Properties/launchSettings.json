@@ -2,7 +2,7 @@
   "profiles": {
     "Lab13": {
       "commandName": "Project",
-      "commandLineArgs": "1.tex D:\\School -o"
+      "commandLineArgs": "SPEED2.EXE D:\\Games -o"
     }
   }
 }
