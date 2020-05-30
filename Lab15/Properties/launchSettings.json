@@ -2,7 +2,7 @@
   "profiles": {
     "Lab15": {
       "commandName": "Project",
-      "commandLineArgs": "1 1 1",
+      "commandLineArgs": "1 2 1",
       "workingDirectory": "D:\\School\\C#\\CSharpLabs\\Lab15"
     }
   }

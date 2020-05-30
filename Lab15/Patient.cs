@@ -16,8 +16,6 @@ namespace Lab15Space {
       Immunity = new Random().Next(100);
     }
 
-
-    public void Cure() => Ill = false;
     public void Infect() => Ill = true;
   }
 }

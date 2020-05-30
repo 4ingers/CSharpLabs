@@ -19,7 +19,7 @@ namespace Lab14Space {
 
 
     public void Process() {
-      string rpn = ReversePolishNotation(_expression);
+      string rpn = PostfixNotation(_expression);
 
       var pdnf = new ArrayList();
       var pcnf = new ArrayList();
@@ -36,9 +36,7 @@ namespace Lab14Space {
       int variablesCount = variablesNames.Count;
       int truthTableRows = (int)Math.Pow(2, variablesCount);
 
-
       for (int i = 0; i < truthTableRows; i++) {       
-
         int bits = i;
         int mask = 1 << variablesCount - 1;
 
@@ -46,7 +44,6 @@ namespace Lab14Space {
           arguments[(char)variablesNames[j]] = (bits & mask) != 0;
           bits <<= 1;
         }
-
         var fx = Calculate(rpn, arguments);
 
         StringBuilder formBuilder = new StringBuilder();
@@ -56,21 +53,16 @@ namespace Lab14Space {
         if (fx == true) {
           foreach (var val in arguments)
             formBuilder.Append($"{(val.Value == false ? "¬" : "")}{val.Key} ∧ ");
-
           form = formBuilder.ToString();
-
           pdnf.Add(form[0..^3]);
         }
         // PCNF
         else {
           foreach (var val in arguments)
             formBuilder.Append($"{(val.Value == true ? "¬" : "")}{val.Key} ∨ ");
-
           form = formBuilder.ToString();
-
           pcnf.Add(form[0..^3]);
         }
-
         foreach (var value in arguments.Values)
           truthTableBuilder.Append($"{(value ? '1' : '0')}\t");
         truthTableBuilder.Append($"{(fx == true ? '1' : '0')}{Environment.NewLine}");
@@ -100,7 +92,7 @@ namespace Lab14Space {
     }
 
     // Возвращает обратную польскую нотацию
-    private static string ReversePolishNotation(string expr) {
+    private static string PostfixNotation(string expr) {
       var stack = new Stack<char>();
       var result = new StringBuilder();
 
@@ -110,9 +102,8 @@ namespace Lab14Space {
         if (expr[i] == ')') {
           stack.Pop();
         }
-
         // Если символ не буква - значит операция
-        // Положить в стэк операций
+        // Положить в стек операций
         else if (!char.IsLetter(expr[i])) {
           if (i != expr.Length - 1
               && char.IsDigit(expr[i])
@@ -138,11 +129,11 @@ namespace Lab14Space {
     }
 
 
-    private static bool Calculate(string rpn, Dictionary<char, bool> variableValue) {
+    private static bool Calculate(string postfix, Dictionary<char, bool> variableValue) {
 
       var stack = new Stack<bool>();
 
-      foreach (var token in rpn) {
+      foreach (var token in postfix) {
         switch (token) {
           case '¬': stack.Push(!stack.Pop()); break;
           case '∨': stack.Push(stack.Pop() | stack.Pop()); break;

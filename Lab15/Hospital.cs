@@ -2,9 +2,8 @@
 using System.Collections.Generic;
 using System.Collections.Concurrent;
 using System.Linq;
-using System.Text;
 using System.Threading;
-using System.Diagnostics;
+using System.Threading.Tasks;
 
 namespace Lab15Space {
 
@@ -22,8 +21,6 @@ namespace Lab15Space {
     // Время работы 
     readonly TimeSpan _hospitalWorkTimeout;
 
-
-    Logger logger = new Logger();
     
     // Очередь
     LinkedList<Patient> queue = new LinkedList<Patient>();
@@ -35,8 +32,15 @@ namespace Lab15Space {
     ConcurrentQueue<Doctor> surgeries = new ConcurrentQueue<Doctor>();
 
 
+    // Фоновые задачи
+    TaskFactory backgroundWork = new TaskFactory(
+        TaskCreationOptions.LongRunning, TaskContinuationOptions.None);
+
+    // Работа врачей
+    TaskFactory doctorsWork = new TaskFactory();
+
     // Блок очереди
-    private object queueLocker = new object();
+    object queueLocker = new object();
 
 
 
@@ -71,24 +75,23 @@ namespace Lab15Space {
 
 
     public void Work() {
-
-      Console.WriteLine(
-          $"Вместимость приёмной : {_receptionCapacity}{Environment.NewLine}" +
-          $"Количество докторов  : {_doctorsCount}{Environment.NewLine}" +
-          $"Максимальная длительность осмотра : {_maxSessionDuration}{Environment.NewLine}");
-
+      ShowInitinalParams();
       DoctorsPrepatarion();
-
-      PatientsGenerator();
-
-      Pandemic();
-
-      HospitalDoor();
-
-      DistributePatients();
+      
+      backgroundWork.StartNew(PatientsComing);
+      backgroundWork.StartNew(InfectAll);
+      backgroundWork.StartNew(SessionsOrganizer);
+      backgroundWork.StartNew(ReceptionEntrance);
 
       Thread.Sleep(_hospitalWorkTimeout);
+    }
 
+
+    private void ShowInitinalParams() {
+      HospitalHistory.WritelnWhite(
+        $" Вместимость приёмной\t: {_receptionCapacity}{Environment.NewLine}" +
+        $" Количество докторов\t: {_doctorsCount}{Environment.NewLine}" +
+        $" Макс. время осмотра\t: {_maxSessionDuration}{Environment.NewLine}");
     }
 
 
@@ -101,95 +104,89 @@ namespace Lab15Space {
     }
 
 
-    private void DistributePatients() {
-      Thread distributor = new Thread(SessionsOrganizer);
-      distributor.Name = nameof(distributor);
-      distributor.IsBackground = true;
-      distributor.Start();
-    }
-
-
     private void SessionsOrganizer() {
       while (true) {
-        Thread.Sleep(TimeSpan.FromSeconds(
-          HospitalParams.SurgeryEntranceCheckInterval));
+        Thread.Sleep(TimeSpan.FromSeconds(HospitalParams
+          .SurgeryEntranceCheckInterval));
 
         if (reception.Count != 0 && surgeries.Count != 0)
-          ThreadPool.QueueUserWorkItem(Session);
+          doctorsWork.StartNew(Session);
       }
     }
 
 
-    private void Session(object state) {
+    private void Session() {
 
       if (!reception.TryDequeue(out Patient patient) ||
           !surgeries.TryDequeue(out Doctor doctor))
         return;
 
-      logger.WriteLineYellow($"Доктор {doctor.Name} " +
+      Thread.CurrentThread.Name = $"Доктор {doctor.Name} " +
+        $"{(patient.Ill ? "лечит" : "консультирует")} {patient.Name}";
+      HospitalHistory.WritelnYellow($"Доктор {doctor.Name} " +
         $"{(patient.Ill ? "лечит" : "консультирует")} {patient.Name}");
 
       int sessionDuration = new Random().Next(1, _maxSessionDuration);
       Thread.Sleep(TimeSpan.FromSeconds(sessionDuration));
 
+      int helpingDuration = UniqueCase(doctor);
 
-      // Помощь врача
-      int uniqueCaseProbability = new Random().Next(100);
-      int helpingDuration = 0;
-      if (uniqueCaseProbability < HospitalParams.MaxUniqueCaseProbability)
-        helpingDuration = Helping(doctor);
-
-
-      logger.WriteLineGreen($"Доктор {doctor.Name} " +
+      HospitalHistory.WritelnGreen($"Доктор {doctor.Name} " +
         $"{(patient.Ill ? "лечил" : "консультировал")} {patient.Name} " +
-        $"{sessionDuration + helpingDuration}с");
+        $"{sessionDuration + helpingDuration}с. Сейчас он отдохнёт и продолжит приём..");
 
       int relaxDuration = new Random().Next(HospitalParams.MinRelaxInterval,
                                             HospitalParams.MaxRelaxInterval);
       Thread.Sleep(TimeSpan.FromSeconds(relaxDuration));
 
-      logger.WriteLineYellow($"Доктор {doctor.Name} отдохнул {relaxDuration}с " +
+      HospitalHistory.WritelnYellow($"Доктор {doctor.Name} отдохнул {relaxDuration}с " +
         $"и готов работать дальше");
 
       surgeries.Enqueue(doctor);
     }
 
 
-    private int Helping(Doctor requester) {
+    private int UniqueCase(Doctor requester) {
+      int uniqueCaseProbability = new Random().Next(100);
+      if (uniqueCaseProbability > HospitalParams.MaxUniqueCaseProbability)
+        return 0;
+
+      HospitalHistory.WritelnCyan($"Доктору {requester.Name} нужна помощь!");
+      
       Doctor assistant = null;
 
-      logger.WriteLineCyan($"Доктору {requester.Name} нужна помощь!");
-
+      // Ждем помощи, пока не отчаимся. Дождались -- убираем ассистента из очереди
       var someoneCame = SpinWait
         .SpinUntil(() => surgeries.TryDequeue(out assistant),
                    (int)TimeSpan.FromSeconds(HospitalParams.DespairTimeout)
                      .TotalMilliseconds);
 
+      // Никто не пришёл
       if (!someoneCame) {
-        logger.WriteLineCyan($"Доктору {requester.Name} никто не помог..");
+        HospitalHistory.WritelnCyan($"Доктору {requester.Name} никто не помог..");
         return 0;
       }
 
-      logger.WriteLineCyan($"Доктор {assistant.Name} " +
+      HospitalHistory.WritelnCyan($"Доктор {assistant.Name} " +
         $"помогает доктору {requester.Name}");
 
+      // Помощь..
       int helpingDuration = new Random().Next(1, _maxSessionDuration);
+
+      doctorsWork.StartNew(() => {
+        Thread.CurrentThread.Name = $"{assistant.Name} помогает {requester.Name}";
+        Thread.Sleep(TimeSpan.FromSeconds(helpingDuration));
+      });
+      Thread.CurrentThread.Name = $"{requester.Name} учится у {assistant.Name}";
       Thread.Sleep(TimeSpan.FromSeconds(helpingDuration));
 
-      logger.WriteLineCyan($"Доктор {assistant.Name} " +
+      HospitalHistory.WritelnCyan($"Доктор {assistant.Name} " +
         $" помогал доктору {requester.Name} {helpingDuration}с");
 
-      surgeries.Prepend(assistant);
+      // Вернули ассистента обратно вперед очереди
+      surgeries.AsParallel().Prepend(assistant);
 
       return helpingDuration;
-    }
-
-
-    private void PatientsGenerator() {
-      Thread patientAdder = new Thread(PatientsComing);
-      patientAdder.Name = nameof(patientAdder);
-      patientAdder.IsBackground = true;
-      patientAdder.Start();
     }
 
 
@@ -208,15 +205,19 @@ namespace Lab15Space {
           queue.AddLast(patient);
 
           if (patient.Ill)
-            logger.WriteLineRed($"{name} теперь в очереди, нужно лечение");
+            HospitalHistory.WritelnRed($"{name} теперь в очереди, нужно лечение");
           else 
-            logger.WriteLine($"{name} теперь в очереди, нужна консультация");
+            HospitalHistory.WritelnWhite($"{name} теперь в очереди, нужна консультация");
         }
         return patient;
       }
 
-      logger.WriteLine($"{patient.Name} вошёл в " +
-        $"{(reception.IsEmpty ? "пустую " : "")}смотровую");
+      if (patient.Ill)
+        HospitalHistory.WritelnRed($"{patient.Name} вошёл в " +
+          $"{(reception.IsEmpty ? "пустую " : "")}смотровую");
+      else
+        HospitalHistory.WritelnWhite($"{patient.Name} вошёл в " +
+          $"{(reception.IsEmpty ? "пустую " : "")}смотровую");
 
       reception.Enqueue(patient);
 
@@ -239,14 +240,6 @@ namespace Lab15Space {
       }
     }
 
-    
-
-    private void Pandemic() {
-      Thread infectious = new Thread(InfectAll);
-      infectious.Name = nameof(infectious);
-      infectious.IsBackground = true;
-      infectious.Start();
-    }
 
 
     private void InfectAll() {
@@ -269,7 +262,7 @@ namespace Lab15Space {
                   
                   node.Previous.Value.Infect();
 
-                  logger.WriteLineRed($"{node.Previous.Value.Name} " +
+                  HospitalHistory.WritelnRed($"{node.Previous.Value.Name} " +
                     $"заразился от {node.Value.Name}");
                 }
                 // ..потом другого (если не уперлись в конец)
@@ -278,7 +271,7 @@ namespace Lab15Space {
                   
                   node.Next.Value.Infect();
 
-                  logger.WriteLineRed($"{node.Next.Value.Name} " +
+                  HospitalHistory.WritelnRed($"{node.Next.Value.Name} " +
                     $"заразился от {node.Value.Name}");
                 }
               }
@@ -291,14 +284,6 @@ namespace Lab15Space {
       }
     }
 
-
-
-    private void HospitalDoor() {
-      Thread entranceSecurity = new Thread(ReceptionEntrance);
-      entranceSecurity.Name = nameof(entranceSecurity);
-      entranceSecurity.IsBackground = true;
-      entranceSecurity.Start();
-    }
 
 
     private Patient MovePatientToReception() {
@@ -324,7 +309,7 @@ namespace Lab15Space {
           if (reception.IsEmpty) {
             var patient = MovePatientToReception();
 
-            logger.WriteLineGreen($"{patient.Name} вошёл в пустую смотровую");
+            HospitalHistory.WritelnGreen($"{patient.Name} вошёл в пустую смотровую");
             continue;
           }
 
@@ -333,7 +318,7 @@ namespace Lab15Space {
               entrant.Ill == oneFromReception.Ill) {
             var patient = MovePatientToReception();
 
-            logger.WriteLineGreen($"{patient.Name} вошёл в смотровую. ");
+            HospitalHistory.WritelnGreen($"{patient.Name} вошёл в смотровую. ");
           }
         }
       }

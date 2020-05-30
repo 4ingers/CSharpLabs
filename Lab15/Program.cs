@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Threading;
 
 namespace Lab15Space {
   class Program {
@@ -15,12 +14,21 @@ namespace Lab15Space {
         hospital = new Hospital();
       }
       else if (args.Length > 2 &&
-          int.TryParse(args[0], out receptionCapacity) &&
-          int.TryParse(args[1], out doctorsCount) &&
-          int.TryParse(args[2], out sessionDuration) &&
-          receptionCapacity >= 0 && doctorsCount >= 0 && sessionDuration >= 0){
-
-        hospital = new Hospital(receptionCapacity,doctorsCount,sessionDuration);
+               int.TryParse(args[0], out receptionCapacity) &&
+               int.TryParse(args[1], out doctorsCount) &&
+               int.TryParse(args[2], out sessionDuration) &&
+               receptionCapacity >= 0 && 
+               doctorsCount >= 0 && 
+               sessionDuration >= 1) {
+        if (args.Length == 4 && int.TryParse(args[3], out var hospitalWorkTimeout) && hospitalWorkTimeout > 0)
+          hospital = new Hospital(receptionCapacity,
+                                doctorsCount,
+                                sessionDuration,
+                                hospitalWorkTimeout);
+        else 
+          hospital = new Hospital(receptionCapacity,
+                                  doctorsCount,
+                                  sessionDuration);
       }
       else {
         Help();
