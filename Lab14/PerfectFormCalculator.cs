@@ -54,14 +54,16 @@ namespace Lab14Space {
           foreach (var val in arguments)
             formBuilder.Append($"{(val.Value == false ? "¬" : "")}{val.Key} ∧ ");
           form = formBuilder.ToString();
-          pdnf.Add(form[0..^3]);
+          if (form.Length != 0)
+            pdnf.Add(form[0..^3]);
         }
         // PCNF
         else {
           foreach (var val in arguments)
             formBuilder.Append($"{(val.Value == true ? "¬" : "")}{val.Key} ∨ ");
           form = formBuilder.ToString();
-          pcnf.Add(form[0..^3]);
+          if (form.Length != 0)
+            pcnf.Add(form[0..^3]);
         }
         foreach (var value in arguments.Values)
           truthTableBuilder.Append($"{(value ? '1' : '0')}\t");
@@ -102,29 +104,31 @@ namespace Lab14Space {
         if (expr[i] == ')') {
           stack.Pop();
         }
+        // Если символ -- буква, то дописываем его
+        else if (char.IsLetterOrDigit(expr[i])) {
+          if (char.IsLetter(expr[i]) && i != expr.Length - 1 && char.IsLetter(expr[i + 1])) 
+            throw new NotSupportedException("String variables are not supported, please use symbols instead");
+
+          if ((char.IsDigit(expr[i]) && expr[i] - '0' > 1)
+              || (i != expr.Length - 1
+                && char.IsDigit(expr[i])
+                && char.IsDigit(expr[i + 1])))
+            throw new FormatException("Constants must be either 1 or 0");
+
+          result.Append(expr[i]);
+        }
         // Если символ не буква - значит операция
         // Положить в стек операций
-        else if (!char.IsLetter(expr[i])) {
-          if (i != expr.Length - 1
-              && char.IsDigit(expr[i])
-              && char.IsDigit(expr[i + 1])
-              || char.IsDigit(expr[i]) && expr[i] > 1) 
-            throw new FormatException("Constants must be either 1 or 0");
-          
+        else {          
           stack.Push(expr[i]);
           continue;
         }
-        else {
-          if (i != expr.Length - 1 && char.IsLetter(expr[i + 1])) 
-            throw new NotSupportedException("String variables are not supported, please use symbols instead");
-          
-          result.Append(expr[i]);
-        }
 
-        // Возвращает все кроме скобок
-        while (stack.Count > 0 && stack.Peek() != '(')
-          result.Append(stack.Pop());
       }
+      // Возвращает все кроме скобок
+      while (stack.Count > 0 && stack.Peek() != '(')
+        result.Append(stack.Pop());
+
       return result.ToString();
     }
 
