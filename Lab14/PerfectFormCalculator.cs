@@ -21,11 +21,11 @@ namespace Lab14Space {
     public void Process() {
       string rpn = PostfixNotation(_expression);
 
-      var pdnf = new ArrayList();
-      var pcnf = new ArrayList();
+      var pdnf = new List<string>();
+      var pcnf = new List<string>();
       var arguments = new Dictionary<char, bool>();
 
-      ArrayList variablesNames = new ArrayList(GetVariables(_expression));
+      List<char> variablesNames = new List<char>(GetVariables(_expression));
 
       var truthTableBuilder = new StringBuilder();
 
@@ -74,7 +74,7 @@ namespace Lab14Space {
     }
 
 
-    private void PerfectForm(string formType, ArrayList pxnf) {
+    private void PerfectForm(string formType, List<string> pxnf) {
       if (pxnf.Count == 0)
         return;
 

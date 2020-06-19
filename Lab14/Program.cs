@@ -8,10 +8,14 @@ namespace Lab14Space {
 
     static void Main(string[] args) {
 
+
       if (args.Length == 0 || args.Length == 1) {
         Console.WriteLine("Usage: <path> <path>");
         Environment.Exit(0);
       }
+
+      if (!File.Exists(args[0]))
+        Environment.Exit(-1);
 
       using var input = new StreamReader(args[0]);
       using var output = new StreamWriter(args[1]);

@@ -2,7 +2,7 @@
   "profiles": {
     "Lab14": {
       "commandName": "Project",
-      "commandLineArgs": "expressions.txt out.txt",
+      "commandLineArgs": "expressions.txt out1.txt",
       "workingDirectory": "D:\\School\\C#\\CSharpLabs\\Lab14"
     }
   }

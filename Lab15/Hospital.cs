@@ -174,10 +174,8 @@ namespace Lab15Space {
       int helpingDuration = new Random().Next(1, _maxSessionDuration);
 
       doctorsWork.StartNew(() => {
-        Thread.CurrentThread.Name = $"{assistant.Name} помогает {requester.Name}";
         Thread.Sleep(TimeSpan.FromSeconds(helpingDuration));
       });
-      Thread.CurrentThread.Name = $"{requester.Name} учится у {assistant.Name}";
       Thread.Sleep(TimeSpan.FromSeconds(helpingDuration));
 
       HospitalHistory.WritelnCyan($"Доктор {assistant.Name} " +
